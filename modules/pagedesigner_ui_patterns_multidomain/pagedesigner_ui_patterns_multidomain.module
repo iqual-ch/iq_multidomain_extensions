@@ -1,0 +1,127 @@
+<?php
+
+function pagedesigner_ui_patterns_multidomain_install() {
+    db_update('system')->fields(array('weight'=>999))->condition('name', 'agedesigner_ui_patterns_multidomain', '=')->execute();
+}
+
+function pagedesigner_ui_patterns_multidomain_pagedesigner_libraries_alter(&$libraries)
+{
+    $patternManager = \Drupal::service('plugin.manager.ui_patterns');
+    foreach ($patternManager->getDefinitions() as $id => $definition) {
+        $pattern_definition = $definition->toArray();
+        if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
+            foreach ($definition->getLibrariesNames() as $library) {
+                if (strpos($library, 'pagedesigner') !== false) {
+                    $libraries[] = $library;
+                }
+            }
+        }
+    }
+}
+
+function pagedesigner_ui_patterns_multidomain_pagedesigner_libraries_internal_alter(&$libraries)
+{
+    $patternManager = \Drupal::service('plugin.manager.ui_patterns');
+    foreach ($patternManager->getDefinitions() as $id => $definition) {
+        $pattern_definition = $definition->toArray();
+        if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
+            foreach ($definition->getLibrariesNames() as $library) {
+                if (strpos($library, 'internal') !== false) {
+                    $libraries[] = $library;
+                }
+            }
+        }
+    }
+}
+
+function pagedesigner_ui_patterns_multidomain_pagedesigner_libraries_live_alter(&$libraries)
+{
+    $patternManager = \Drupal::service('plugin.manager.ui_patterns');
+    foreach ($patternManager->getDefinitions() as $id => $definition) {
+        $pattern_definition = $definition->toArray();
+        if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
+            foreach ($definition->getLibrariesNames() as $library) {
+                if (strpos($library, 'live') !== false) {
+                    $libraries[] = $library;
+                }
+            }
+        }
+    }
+}
+
+function pagedesigner_ui_patterns_multidomain_pagedesigner_patterns_alter(&$patterns, $type)
+{
+    $patternManager = \Drupal::service('plugin.manager.ui_patterns');
+    foreach ($patternManager->getDefinitions() as $id => $definition) {
+        $pattern_definition = $definition->toArray();
+        if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
+            if (strpos($definition->getBasePath(), $type) !== false && strpos($definition->getBasePath(), 'designer') === false) {
+                $patternMarkup = _pagedesigner_ui_patterns_multidomain_createIqualPattern($definition, $type);
+                $patterns[$id] = array('id' => $id, 'pattern' => $patternMarkup, 'label' => $definition->getLabel(), 'definition' => $definition->toArray());
+            }
+        }
+    }
+
+}
+function pagedesigner_ui_patterns_multidomain_pagedesigner_patterns_designer_alter(&$patterns, $type)
+{
+  $patternManager = \Drupal::service('plugin.manager.ui_patterns');
+    foreach ($patternManager->getDefinitions() as $id => $definition) {
+        $pattern_definition = $definition->toArray();
+        if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
+            if (strpos($definition->getBasePath(), $type) !== false && strpos($definition->getBasePath(), 'designer') !== false) {
+                $patternMarkup = _pagedesigner_ui_patterns_multidomain_createIqualPattern($definition, $type);
+                $patterns[$id] = array('id' => $id, 'pattern' => $patternMarkup, 'label' => $definition->getLabel(), 'definition' => $definition->toArray());
+            }
+        }
+    }
+}
+
+/**
+ * Build patterns using UI Pattern API's
+ *
+ * @param string $definition
+ * @return array
+ */
+function _pagedesigner_ui_patterns_multidomain_createIqualPattern($definition, $type)
+{
+    $patternMarkup = '';
+    $id = $definition['id'];
+    $label = $definition['label'];
+    $elements[$id] = [
+        '#type' => 'pattern_preview',
+        '#id' => $id,
+    ];
+    /* Render a pattern preview as displayed on the pagebuilder page */
+    $preview = \Drupal::service('renderer')->render($elements);
+    /* Get fields */
+    $renderedFields = $definition->getFields();
+    $info[$id] = [
+        '#type' => 'pattern',
+        '#id' => $id,
+        '#fields' => [],
+    ];
+    foreach ($renderedFields as $key => $value) {
+        $placeholderName = $value->getName();
+        $placeholderType = $value->getType();
+        $info[$id]['#fields'][$placeholderName] = '{{' . $placeholderName . '}}';
+    }
+    /* Render a pattern as displayed on the pagebuilder page */
+    $pattern = \Drupal::service('renderer')->render($info);
+    /* Append html with rendered patterns */
+    if ($type == 'structural') {
+        $patterntype = $id;
+        if (strpos($patterntype, 'row') !== false) {
+            $patterntype = 'row';
+        }
+        $patternMarkup = '<div class="iqbm-row" data-pattern-type="' . $patterntype . '">';
+    } else {
+        $patternMarkup = '<div class="iqbm-element" data-pattern-type="' . $id . '">';
+    }
+    $patternMarkup .= '<span class="iqbm-icon iqbm-drag"><i class="fa fa-arrows"></i></span>
+                         <div class="iqbm-preview"><div class="iqbm-description"><div>' . $label . '</div></div>';
+    $patternMarkup .= '<div class="iqbm-element-preview"><div class="iqbm-button iqbm-text"><a href="#">
+        ' . $preview . '</a></div></div></div>';
+    $patternMarkup .= '<div class="iqbm-view">' . $pattern . '</div></div>';
+    return $patternMarkup;
+}

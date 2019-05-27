@@ -1,0 +1,8 @@
+name: iqual Multidomain Extension
+description: Contains extensions, config etc. for a multidomain setup
+package: Domain
+
+type: module
+core: 8.x
+dependencies:
+  - domain

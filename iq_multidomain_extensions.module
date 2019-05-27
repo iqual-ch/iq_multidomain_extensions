@@ -1,0 +1,52 @@
+<?php
+use Drupal\Core\Entity\EntityTypeInterface;
+
+/**
+ * @param EntityTypeInterface[] $entity_types
+ */
+function iq_multidomain_extensions_entity_type_alter(&$entity_types)
+{
+    if (isset($entity_types['domain'])) {
+        \Drupal::logger('iq_multidomain_extensions')->notice('entity type alter');
+        $entity_types['domain']->setHandlerClass(
+            'form',
+            [
+                'default' => 'Drupal\iq_multidomain_extensions\DomainForm',
+                'edit' => 'Drupal\iq_multidomain_extensions\DomainForm',
+                'delete' => 'Drupal\domain\Form\DomainDeleteForm'
+            ]
+        );
+    }
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function iq_multidomain_extensions_token_info()
+{
+    $info = [];
+    $info['types']['iq_domain'] = ['name' => t('iqual Domain Extensions'), 'description' => t('iqual Domain Extensions')];
+    $info['tokens']['iq_domain']['url_prefix'][] = 'iqual Domain URL prefix';
+    return $info;
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function  iq_multidomain_extensions_tokens($type, $tokens, array $data, array $options, \Drupal\Core\Render\BubbleableMetadata $bubbleable_metadata)
+{
+
+    $replacements = [];
+    if ($type == 'iq_domain' && !empty($data['node'])) {
+
+        foreach ($tokens as $name => $original) {
+            // Find the desired token by name.
+            switch ($name) {
+                case 'url_prefix':
+                    $replacements[$original] = $data['node']->field_domain_source->entity->getThirdPartySetting('iq_multidomain_extensions', 'url_prefix', '');
+                    break;
+            }
+        }
+    }
+    return $replacements;
+}
