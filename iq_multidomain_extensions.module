@@ -7,7 +7,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
 function iq_multidomain_extensions_entity_type_alter(&$entity_types)
 {
     if (isset($entity_types['domain'])) {
-        \Drupal::logger('iq_multidomain_extensions')->notice('entity type alter');
         $entity_types['domain']->setHandlerClass(
             'form',
             [
@@ -50,3 +49,68 @@ function  iq_multidomain_extensions_tokens($type, $tokens, array $data, array $o
     }
     return $replacements;
 }
+
+
+/**
+ * Preprocess hook.
+ *
+ * @param array $variables
+ *   Theme variables.
+ */
+function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variables) {
+    /** @var \Drupal\views\ResultRow $row */
+    /** @var \Drupal\views\ViewExecutable $view */
+    /** @var \Drupal\ui_patterns_views\Plugin\views\row\Pattern $row_plugin */
+
+    $fields = [];
+    $view = $variables['view'];
+    $row_plugin = $view->rowPlugin;
+    $options = $variables['options'];
+    $row = $variables['row'];
+
+    $pattern_prefix = false;
+
+    if( \Drupal::service('theme.manager')->getActiveTheme()->getName() != \Drupal::config('system.theme')->get('default') ){
+      $pattern_prefix = \Drupal::service('theme.manager')->getActiveTheme()->getName().'_';
+      $pattern_ids = array_keys( \Drupal::service('plugin.manager.ui_patterns')->getDefinitions() );
+    }
+
+    foreach ($options['pattern_mapping'] as $mapping) {
+      $field_name = $mapping['source'];
+      $field = $view->field[$field_name];
+      $field_output = $view->style_plugin->getField($row->index, $field_name);
+      if ($row_plugin->isFieldVisible($field, $field_output)) {
+        $destination = $row_plugin->getMappingDestination('views_row', $field_name, $options);
+        $fields[$destination][] = $field_output;
+      }
+    }
+
+    $variables['pattern'] = [];
+    if ($view->preview && !isset($view->element['#embed'])) {
+      drupal_set_message(t("Pattern Views row plugin does not support preview."), 'warning');
+      $variables['pattern'] = ['#type' => 'status_messages'];
+    }
+    elseif (!empty($fields)) {
+
+      if( $pattern_prefix && in_array( $pattern_prefix.$options['pattern'], $pattern_ids ) ){
+        $pattern_id = $pattern_prefix.$options['pattern'];
+      }else{
+        $pattern_id = $options['pattern'];
+      }
+
+      $variables['pattern'] = [
+        '#type' => 'pattern',
+        '#id' => $pattern_id,
+        '#fields' => $fields,
+        '#multiple_sources' => TRUE,
+        '#variant' => isset($options['pattern_variant']) ? $options['pattern_variant'] : '',
+      ];
+
+      // Allow default context values to not override those exposed elsewhere.
+      $variables['pattern']['#context']['type'] = 'views_row';
+      $variables['pattern']['#context']['view_name'] = $view->storage->id();
+      $variables['pattern']['#context']['display'] = $view->current_display;
+      $variables['pattern']['#context']['view'] = $view;
+      $variables['pattern']['#context']['row'] = $row;
+    }
+  }
