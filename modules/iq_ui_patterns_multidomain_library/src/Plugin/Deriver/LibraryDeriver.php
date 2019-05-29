@@ -131,6 +131,9 @@ class LibraryDeriver extends AbstractYamlPatternsDeriver {
     $patterns = [];
 
 
+    \Drupal::logger('iq_multidomain_extensions')->notice('overridden library deriver');
+
+
 //    print_r( $thems );
 
     $directories = $this->getDirectories();

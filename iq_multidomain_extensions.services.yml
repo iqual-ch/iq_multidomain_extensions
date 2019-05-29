@@ -1,0 +1,8 @@
+services:
+  iq_multidomain_extensions.route_subscriber:
+    class: Drupal\iq_multidomain_extensions\Routing\MultiDomainRouteSubscriber
+    tags:
+      - { name: event_subscriber }
+  plugin.manager.ui_patterns_multidomain:
+    class: Drupal\iq_multidomain_extensions\MultiDomainUiPatternsManager
+    arguments: ['@container.namespaces', '@module_handler', '@theme_handler', '@cache.discovery']

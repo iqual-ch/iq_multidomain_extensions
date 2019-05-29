@@ -1,7 +1,7 @@
 <?php
 
 function pagedesigner_ui_patterns_multidomain_install() {
-    db_update('system')->fields(array('weight'=>999))->condition('name', 'agedesigner_ui_patterns_multidomain', '=')->execute();
+    db_update('system')->fields(array('weight'=>999))->condition('name', 'pagedesigner_ui_patterns_multidomain', '=')->execute();
 }
 
 function pagedesigner_ui_patterns_multidomain_pagedesigner_libraries_alter(&$libraries)
