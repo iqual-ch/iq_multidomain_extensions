@@ -8,12 +8,6 @@ function iq_multidomain_extensions_install() {
   db_update('system')->fields(array('weight'=>999))->condition('name', 'iq_multidomain_extensions', '=')->execute();
 }
 
-
-
-
-
-
-
 /**
  * Implements hook_theme().
  */
@@ -28,20 +22,11 @@ function iq_multidomain_extensions_theme() {
     ],
   ];
 
-  \Drupal::logger('iq_multidomain_extensions')->notice('iq_multidomain_extensions_theme');
-
   foreach ( \Drupal::service('plugin.manager.ui_patterns_multidomain')->getPatterns() as $pattern) {
     $items += $pattern->getThemeImplementation();
   }
   return $items;
 }
-
-
-
-
-
-
-
 
 
 /**
@@ -60,15 +45,6 @@ function iq_multidomain_extensions_entity_type_alter(&$entity_types)
     );
   }
 }
-
-function iq_multidomain_extensions_ui_patterns_ui_patterns_source_info_alter(array &$definitions)
-{
-  \Drupal::logger('iq_multidomain_extensions')->notice('Altering definition for yaml');
-  print_r(array_keys($definitions));
-  die();
-  // $definitions['yaml']->setLabel('Library Pattern iqual');
-}
-
 
 /**
  * Implements hook_token_info().

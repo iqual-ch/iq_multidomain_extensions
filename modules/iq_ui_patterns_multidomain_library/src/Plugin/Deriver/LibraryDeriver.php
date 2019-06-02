@@ -130,17 +130,8 @@ class LibraryDeriver extends AbstractYamlPatternsDeriver {
   public function getPatterns() {
     $patterns = [];
 
-
-    \Drupal::logger('iq_multidomain_extensions')->notice('overridden library deriver');
-
-
-//    print_r( $thems );
-
     $directories = $this->getDirectories();
 
-//    $directories['custom_theme_frischeparadies'] =  "/var/www/public/themes/contrib/custom_theme_frischeparadies";
-
-//    $themes = [];
     $domain_storage = \Drupal::service('entity_type.manager')->getStorage('domain');
     foreach( $domain_storage->loadMultipleSorted() as $domain ){
       $theme_name = \Drupal::config('domain_theme_switch.settings')->get($domain->id() . '_site');
