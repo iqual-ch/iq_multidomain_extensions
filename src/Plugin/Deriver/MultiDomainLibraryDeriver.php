@@ -18,11 +18,7 @@ class MultiDomainLibraryDeriver extends LibraryDeriver
    */
   public function getPatterns()
   {
-
-    \Drupal::logger('iq_multidomain_extensions')->notice('MultiDomainLibraryDeriver -> getPatterns()');
-
     $patterns = [];
-
     $directories = $this->getDirectories();
     $domain_storage = \Drupal::service('entity_type.manager')->getStorage('domain');
     foreach ($domain_storage->loadMultipleSorted() as $domain) {

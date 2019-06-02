@@ -9,14 +9,12 @@ composer require drupal/domain
 composer require drupal/domain_theme_switch
 composer require drupal/domain_site_settings
 
-2. uninstall UI patterns Library & Ui patterns for pagedesigner.
+2. Install iq_multidomain_extensions
 
-3. Install iq_multidomain_extensions
-
-4. add domain records
+3. add domain records
 /admin/config/domain
 
-5. choose themes for domains
+4. choose themes for domains
 /admin/config/domain/domain_theme_switch/config
 
 IMPORTANT NOTES

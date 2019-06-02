@@ -8,6 +8,7 @@ use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
+use Drupal\ui_patterns\UiPatternsManager;
 
 
 /**
@@ -16,26 +17,5 @@ use Drupal\Core\Plugin\DefaultPluginManager;
  * @method \Drupal\ui_patterns\Definition\PatternDefinition getDefinition($plugin_id, $exception_on_invalid = TRUE)
  */
 class MultiDomainUiPatternsManager extends UiPatternsManager {
-
-
-
-  // public function __construct(\Traversable $namespaces, ModuleHandlerInterface $module_handler, ThemeHandlerInterface $theme_handler, CacheBackendInterface $cache_backend) {
-
-  //   print_r( $namespaces );
-  //   die();
-  // }
-
-
-
-
-  public function getPatterns() {
-    \Drupal::logger('iq_multidomain_extensions')->notice('MultiDomainUiPatternsManager -> getPatterns()');
-
-
-    return [];
-
-
-  }
-
 
 }
