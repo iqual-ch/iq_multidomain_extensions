@@ -1,5 +1,0 @@
-parameters:
-  iq_ui_patterns_multidomain_library.file_extensions:
-    - ".ui_patterns.yml"
-    - ".patterns.yml"
-    - ".pattern.yml"
