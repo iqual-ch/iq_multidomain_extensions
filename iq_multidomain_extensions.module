@@ -9,27 +9,6 @@ function iq_multidomain_extensions_install() {
 }
 
 /**
- * Implements hook_theme().
- */
-function iq_multidomain_extensions_theme() {
-  /** @var \Drupal\ui_patterns\Plugin\PatternBase $pattern */
-  $items = [
-    'patterns_destination' => [
-      'variables' => ['sources' => NULL, 'context' => NULL],
-    ],
-    'patterns_use_wrapper' => [
-      'variables' => ['use' => NULL],
-    ],
-  ];
-
-  foreach ( \Drupal::service('plugin.manager.ui_patterns_multidomain')->getPatterns() as $pattern) {
-    $items += $pattern->getThemeImplementation();
-  }
-  return $items;
-}
-
-
-/**
  * @param EntityTypeInterface[] $entity_types
  */
 function iq_multidomain_extensions_entity_type_alter(&$entity_types)
