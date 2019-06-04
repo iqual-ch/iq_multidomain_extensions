@@ -5,7 +5,7 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\ui_patterns\UiPatterns;
 
 function iq_multidomain_extensions_install() {
-  db_update('system')->fields(array('weight'=>999))->condition('name', 'iq_multidomain_extensions', '=')->execute();
+  module_set_weight('iq_multidomain_extensions', 999);
 }
 
 /**
