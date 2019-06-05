@@ -43,7 +43,7 @@ function  iq_multidomain_extensions_tokens($type, $tokens, array $data, array $o
 {
 
   $replacements = [];
-  if ($type == 'iq_domain' && !empty($data['node'])) {
+  if ($type == 'iq_domain' && !empty($data['node']) && $data['node']->field_domain_source->entity ) {
 
     foreach ($tokens as $name => $original) {
       // Find the desired token by name.
@@ -158,6 +158,7 @@ function iq_multidomain_extensions_pagedesigner_libraries_live_alter(&$libraries
 {
   $patternManager = \Drupal::service('plugin.manager.ui_patterns');
   foreach ($patternManager->getDefinitions() as $id => $definition) {
+
       $pattern_definition = $definition->toArray();
       if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
           foreach ($definition->getLibrariesNames() as $library) {
