@@ -1,0 +1,13 @@
+{
+  "name": "iqual/iq_multidomain_extensions",
+  "description": "Support for multidomain.",
+  "type": "drupal-module",
+  "homepage": "https://github.com/iqual-ch/iq_multidomain_extensions",
+  "license": "GPL-2.0+",
+  "require": {
+    "drupal/core": ">=8.6",
+    "drupal/domain": "*",
+    "drupal/domain_site_settings": "*",
+    "drupal/domain_theme_switch": "*"
+  }
+}
