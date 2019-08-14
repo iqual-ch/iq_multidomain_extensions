@@ -1,4 +1,5 @@
 
+
 # iq_multidomain_extensions
 
 Contains extensions, config etc. for a multidomain setup
@@ -6,9 +7,9 @@ Contains extensions, config etc. for a multidomain setup
 Installation guide
 
 1. get domain modules
-composer require drupal/domain
-composer require drupal/domain_theme_switch
-composer require drupal/domain_site_settings
+	- composer require drupal/domain
+	- composer require drupal/domain_theme_switch
+	- composer require drupal/domain_site_settings
 
 	apply patch for domain_site_settings:
 	https://www.drupal.org/files/issues/2018-10-09/2930391-21.patch
