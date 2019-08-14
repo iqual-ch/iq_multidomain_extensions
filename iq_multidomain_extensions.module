@@ -2,7 +2,10 @@
 
 
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Extension\Exception\UnknownExtensionException;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\ui_patterns\UiPatterns;
+use \Drupal\Core\Form\FormState;
 
 function iq_multidomain_extensions_install() {
   module_set_weight('iq_multidomain_extensions', 999);
@@ -245,4 +248,64 @@ function _iq_multidomain_extensions_createIqualPattern($definition, $type)
       ' . $preview . '</a></div></div></div>';
   $patternMarkup .= '<div class="iqbm-view">' . $pattern . '</div></div>';
   return $patternMarkup;
+}
+
+/**
+ * Implements hook_form_BASE_ID_alter().
+ */
+function iq_multidomain_extensions_form_domain_edit_form_alter(&$form, FormState $form_state, $form_id) {
+    $form['actions']['submit']['#submit'][] = 'iq_multidomain_extensions_domain_edit_form_submit';
+}
+
+function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInterface $form_state) {
+    $new_value = strtolower($form['name']['#value']);
+    $new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
+    $old_name = 'iq_custom';
+    if (!is_dir('themes/custom/' . $new_name)) {
+        recurse_copy('themes/custom/' . $old_name, 'themes/custom/' . $new_name, $old_name, $new_name);
+        $themeInfo = $form['name']['#value'];
+        $config =\Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
+        $config->set($form['id']['#value'] . '.site_name', $themeInfo);
+        $config->save();
+        change_theme_info('themes/custom/' . $new_name . '/' . $new_name . '.info.yml', $themeInfo);
+
+        /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
+        $themeHandler = \Drupal::service('theme_handler');
+        try {
+            $themeHandler->getTheme($new_name);
+        } catch (UnknownExtensionException $exception) {
+            /** @var \Drupal\Core\Extension\ThemeInstaller $themeInstaller */
+            $themeInstaller = \Drupal::service('theme_installer');
+            $themeInstaller->install([$new_name]);
+        }
+    }
+}
+
+function recurse_copy($src,$dst, $old_name, $new_name) {
+    $dir = opendir($src);
+    @mkdir($dst);
+    while(false !== ($file = readdir($dir)) ) {
+        if (($file != '.' ) && ( $file != '..' )) {
+            if (is_dir($src . '/' . $file)) {
+                recurse_copy($src . '/' . $file,$dst . '/' . $file, $old_name, $new_name);
+            }
+            else {
+                $file_contents = file_get_contents($src . '/' . $file);
+                $file_contents = str_replace($old_name,$new_name,$file_contents);
+                if(strpos($file, $old_name) != -1) {
+                    $file = str_replace($old_name, $new_name, $file);
+                }
+                @file_put_contents($dst . '/' . $file,$file_contents);
+            }
+        }
+    }
+    closedir($dir);
+}
+
+function change_theme_info($file_name, $theme_name) {
+    $file_contents = file_get_contents($file_name);
+    $file_contents = preg_replace('/name: [a-z0-9].*/', 'name: ' . $theme_name, $file_contents);
+    $file_contents = preg_replace('/description: \'[a-z0-9].*\'/', 'description: ' . $theme_name . ' theme', $file_contents);
+    @file_put_contents($file_name, $file_contents);
+
 }
