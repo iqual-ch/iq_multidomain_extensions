@@ -1,6 +1,7 @@
 <?php
 
 
+use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Extension\Exception\UnknownExtensionException;
 use Drupal\Core\Form\FormStateInterface;
@@ -264,7 +265,7 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
     if (!is_dir('themes/custom/' . $new_name)) {
         recurse_copy('themes/custom/' . $old_name, 'themes/custom/' . $new_name, $old_name, $new_name);
         $themeInfo = $form['name']['#value'];
-        $config =\Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
+        $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
         $config->set($form['id']['#value'] . '.site_name', $themeInfo);
         $config->save();
         change_theme_info('themes/custom/' . $new_name . '/' . $new_name . '.info.yml', $themeInfo);
@@ -276,8 +277,16 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
         } catch (UnknownExtensionException $exception) {
             /** @var \Drupal\Core\Extension\ThemeInstaller $themeInstaller */
             $themeInstaller = \Drupal::service('theme_installer');
-            $themeInstaller->install([$new_name]);
+            try {
+                $themeInstaller->install([$new_name]);
+            }
+            catch (EntityStorageException $e) {
+
+            }
         }
+        $config = \Drupal::service('config.factory')->getEditable('domain_theme_switch.settings');
+        $config->set($form['id']['#value'] . '_site', $new_name);
+        $config->save();
     }
 }
 
