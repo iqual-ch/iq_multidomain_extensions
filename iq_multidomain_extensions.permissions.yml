@@ -1,0 +1,9 @@
+administer iq_multidomain_extensions settings:
+  title: 'Administer Iqual domains'
+  description: 'Allow to administer domains.'
+  retrict access: true
+
+add iq_multidomain_extensions domains:
+  title: 'Add Iqual domains'
+  description: 'Allow to create domains.'
+  retrict access: true

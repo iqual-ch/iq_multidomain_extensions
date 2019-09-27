@@ -1,0 +1,29 @@
+iq_multidomain_extensions.settings:
+  path: '/admin/config/system/iqual_domain'
+  defaults:
+    _title: 'Domains'
+    _controller: '\Drupal\iq_multidomain_extensions\Controller\MultiDomainPatternsLibraryController::domainList'
+  requirements:
+    _permission: 'administer iq_multidomain_extensions settings'
+  options:
+    _admin_route: TRUE
+
+iq_multidomain_extensions.add_domain:
+  path: '/admin/config/system/iqual_domain/add'
+  defaults:
+    _title: 'Create domain'
+    _entity_form: domain.edit
+  requirements:
+    _permission: 'administer iq_multidomain_extensions settings'
+  options:
+    _admin_route: TRUE
+
+iq_multidomain_extensions.rancher_settings:
+  path: '/admin/config/system/iqual_domain/rancher'
+  defaults:
+    _title: 'Rancher Configuration'
+    _form: '\Drupal\iq_multidomain_extensions\Form\RancherForm'
+  requirements:
+    _permission: 'administer iq_multidomain_extensions settings'
+  options:
+    _admin_route: TRUE

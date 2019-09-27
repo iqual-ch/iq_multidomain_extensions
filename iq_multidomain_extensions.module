@@ -5,7 +5,8 @@ use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Extension\Exception\UnknownExtensionException;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\ui_patterns\UiPatterns;
+use Drupal\Core\Url;
+use \Symfony\Component\HttpFoundation\RedirectResponse;
 use \Drupal\Core\Form\FormState;
 
 function iq_multidomain_extensions_install() {
@@ -255,23 +256,150 @@ function _iq_multidomain_extensions_createIqualPattern($definition, $type)
  * Implements hook_form_BASE_ID_alter().
  */
 function iq_multidomain_extensions_form_domain_edit_form_alter(&$form, FormState $form_state, $form_id) {
+    $user = \Drupal::currentUser();
+    if (!$user->hasPermission('add iq_multidomain_extensions domains')) {
+        $form['id']['#type'] = 'hidden';
+        $form['scheme']['#type'] = 'hidden';
+        $form['status']['#type'] = 'hidden';
+        $form['is_default']['#type'] = 'hidden';
+        $form['validate_url']['#type'] = 'hidden';
+        $form['weight']['#type'] = 'hidden';
+        $form['scheme']['#default_value'] = 'https';
+        $form['status']['#default_value'] = 1;
+        $form['is_default']['#default_value'] = false;
+        $form['validate_url']['#default_value'] = false;
+    }
     $form['actions']['submit']['#submit'][] = 'iq_multidomain_extensions_domain_edit_form_submit';
 }
 
+/**
+ * Submit handler function for the domain form to create a theme copy.
+ */
 function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInterface $form_state) {
     $new_value = strtolower($form['name']['#value']);
     $new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
+    $domain_name = str_replace("_", "-", $new_name);
     $old_name = 'iq_custom';
+    $messenger = \Drupal::messenger();
+    /** Rancher integration */
+    $httpClient = \Drupal::httpClient();
+    $url = "https://rancher.iqual.ch/v3/project";
+    $rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
+    $username = $rancher_settings->get('username');
+    $password = $rancher_settings->get('password');;
+
+    // Get all the project and ingress settings from Rancher API.
+    $curl_project = curl_init($url);
+    curl_setopt($curl_project, CURLOPT_USERPWD, $username . ':' . $password);
+    curl_setopt($curl_project, CURLOPT_HTTPHEADER, array(
+        'Content-Type: application/json',
+        'Accept: application/json',
+    ));
+
+    curl_setopt($curl_project, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl_project, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+
+    $project = curl_exec($curl_project);
+    $http_code = curl_getinfo( $curl_project, CURLINFO_HTTP_CODE );
+    if ($http_code == "200" || $http_code == "201") {
+        $project_id = json_decode($project,true)['data'][0]['id'];
+        $host =  $_SERVER['HTTP_HOST'];
+
+        $curl_ingress = curl_init($url . '/' . $project_id . '/ingresses');
+        curl_setopt($curl_ingress, CURLOPT_USERPWD, $username . ':' . $password);
+        curl_setopt($curl_ingress, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Accept: application/json',
+        ));
+
+        curl_setopt($curl_ingress, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl_ingress, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        $ingresses = curl_exec($curl_ingress);
+        $ingresses = json_decode($ingresses, true)['data'];
+        $namespace_id = "";
+        $service_id = "";
+        foreach ($ingresses as $ingress) {
+            $public_endpoints = $ingress['publicEndpoints'];
+            foreach ($public_endpoints as $public_endpoint) {
+                if($public_endpoint['hostname'] == $host) {
+                    $namespace_id = $ingress['namespaceId'];
+                    $service_id = $public_endpoint['serviceId'];
+                    break;
+                }
+            }
+        }
+        if (isset($namespace_id) && !empty($namespace_id)) {
+            $data = [];
+            $data['annotations'] = [
+                "certmanager.k8s.io/cluster-issuer"=>"letsencrypt-prod",
+                "nginx.ingress.kubernetes.io/proxy-body-size"=> "100M",
+                "nginx.ingress.kubernetes.io/proxy-buffer-size"=> "16K"
+            ];
+            $data['defaultBackend'] = null;
+            $data['name'] = $domain_name . '-docker-dev-iqual-ch-ingress';
+            $data['namespaceId'] = $namespace_id;
+            $data['projectId'] = $project_id;
+            $data['rules'] = [
+                [
+                    "host" => $form['hostname']['#value'],
+                    "paths"=> [
+                        [
+                            "serviceId"=> $service_id,
+                            "targetPort"=> 80,
+                            "type"=> "/v3/project/schemas/httpIngressPath"
+                        ]
+                    ],
+                    "type"=> "/v3/project/schemas/ingressRule"
+                ]
+            ];
+            $data['tls'] = [
+                [
+                    'certificateId' => $namespace_id . ":" . $domain_name ."-docker-dev-iqual-ch-autogen",
+                    "hosts" => [
+                        $form['hostname']['#value']
+                    ],
+                    "type" => "/v3/project/schemas/ingressTLS"
+                ]
+            ];
+            $data = json_encode($data);
+            $curl = curl_init();
+            curl_setopt($curl, CURLOPT_USERPWD, $username . ':' . $password);
+            curl_setopt($curl, CURLOPT_POST, true);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+            curl_setopt($curl, CURLOPT_URL, 'https://rancher.iqual.ch/v3/project/' . $project_id . '/ingresses');
+            curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ));
+
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+            $result = curl_exec($curl);
+        }
+        else {
+            $messenger->addMessage('Invalid configuration for the Rancher API. Set Rancher Settings at /admin/config/system/iqual_domain/rancher', 'error');
+        }
+    }
+    else {
+        $messenger->addMessage('Could not create a rancher domain. Set Rancher Settings at /admin/config/system/iqual_domain/rancher', 'error');
+    }
+
+
+
+    /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
+    $themeHandler = \Drupal::service('theme_handler');
     if (!is_dir('themes/custom/' . $new_name)) {
         recurse_copy('themes/custom/' . $old_name, 'themes/custom/' . $new_name, $old_name, $new_name);
         $themeInfo = $form['name']['#value'];
         $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
         $config->set($form['id']['#value'] . '.site_name', $themeInfo);
+        $mail = \Drupal::configFactory()->get('system.site')->get('mail');
+        if (!isset($mail) || empty($mail)) {
+            $mail = 'info@docker.iqual.ch';
+        }
+        $config->set($form['id']['#value'] . '.site_mail', $mail);
         $config->save();
         change_theme_info('themes/custom/' . $new_name . '/' . $new_name . '.info.yml', $themeInfo);
-
-        /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
-        $themeHandler = \Drupal::service('theme_handler');
         try {
             $themeHandler->getTheme($new_name);
         } catch (UnknownExtensionException $exception) {
@@ -281,15 +409,70 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
                 $themeInstaller->install([$new_name]);
             }
             catch (EntityStorageException $e) {
-
+                $messenger->addMessage(t('Theme is already stored.'), 'warning');
+            }
+            catch (UnknownExtensionException $e) {
+                $messenger->addMessage(t('There was a problem with installing the theme.'), 'error');
             }
         }
         $config = \Drupal::service('config.factory')->getEditable('domain_theme_switch.settings');
         $config->set($form['id']['#value'] . '_site', $new_name);
         $config->save();
+        // Copy all the settings from the previous to the new theme.
+        $data = \Drupal::configFactory()->get('iq_custom.settings')->getRawData();
+        \Drupal::configFactory()->getEditable($new_name . '.settings')->setData($data)->save();
+
+        // Send an email to notify about setting up the new domain.
+        $mailManager = \Drupal::service('plugin.manager.mail');
+        $user = \Drupal::currentUser();
+        $module = 'iq_multidomain_extensions';
+        $key = 'create_domain';
+        $to = $user->getEmail();
+        $params['message'] = 'A new domain has been created with a hostname ' . $form['hostname']['#value'] . ' for the ' . $form['name']['#value'] . ' site.';
+        $params['domain_title'] = $form['name']['#value'];
+        $send = true;
+
+        if (isset($to) && !empty($to)) {
+            $result = $mailManager->mail($module, $key, $to, 'en', $params, null, $send);
+            if ($result['result'] !== true) {
+                $messenger->addMessage(t('There was a problem sending your message and it was not sent.'), 'error');
+            }
+            else {
+                $messenger->addMessage(t('An email has been sent for the newly created domain.'));
+            }
+        }
     }
 }
 
+/**
+ * Implements hook_mail().
+ */
+function iq_multidomain_extensions_mail($key, &$message, $params) {
+    $messenger = \Drupal::messenger();
+    $options = [
+        'langcode' => $message['langcode'],
+    ];
+    switch ($key) {
+     case 'create_domain':
+         $message['from'] =  \Drupal::config('system.site')->get('mail');
+         $message['subject'] = t('Domain created: @title', array('@title' => $params['domain_title']), $options);
+         $message['body'][] = $params['message'];
+         break;
+    }
+}
+
+/**
+ * Function to copy a theme folder.
+ *
+ * @param $src
+ *    The source of the theme.
+ * @param $dst
+ *    The destination of the theme copy.
+ * @param $old_name
+ *    Old name of the theme.
+ * @param $new_name
+ *    New name for the theme copy.
+ */
 function recurse_copy($src,$dst, $old_name, $new_name) {
     $dir = opendir($src);
     @mkdir($dst);
@@ -311,6 +494,14 @@ function recurse_copy($src,$dst, $old_name, $new_name) {
     closedir($dir);
 }
 
+/**
+ * Renames the theme name of the new theme copy for proper functionality.
+ *
+ * @param $file_name
+ *    The file name in which the theme will be renamed.
+ * @param $theme_name
+ *    The new theme name.
+ */
 function change_theme_info($file_name, $theme_name) {
     $file_contents = file_get_contents($file_name);
     $file_contents = preg_replace('/name: [a-z0-9].*/', 'name: ' . $theme_name, $file_contents);
