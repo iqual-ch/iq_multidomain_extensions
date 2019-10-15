@@ -8,6 +8,8 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use \Symfony\Component\HttpFoundation\RedirectResponse;
 use \Drupal\Core\Form\FormState;
+use Tyldar\Rancher\Rancher;
+
 
 function iq_multidomain_extensions_install() {
   module_set_weight('iq_multidomain_extensions', 999);
@@ -288,6 +290,44 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
     $username = $rancher_settings->get('username');
     $password = $rancher_settings->get('password');;
 
+
+  try
+  {
+    $rancher = new Rancher("https://rancher.iqual.ch/v3/", "token-5w5w6", "8phhqzhzh8p6skv4rkt5pcx77xvv76p9k2frwr2dcpz75vtkgc9nvc");
+    $projects = $rancher->projects()->getAll();
+
+    $domain_namespace = null;
+    $domain_service = null;
+    $project_id = null;
+    foreach($projects as $project) {
+      $ingresses = $rancher->ingresses($project->id)->getAll();
+      foreach ($ingresses as $ingress) {
+        foreach ($ingress->publicEndpoints as $publicEndpoint) {
+          if($publicEndpoint->hostname == $_SERVER['HTTP_HOST']) {
+            $domain_namespace = $ingress->namespaceId;
+            $domain_service = $publicEndpoint->serviceId;
+            $project_id = $project->id;
+            break;
+          }
+        }
+        if (isset($domain_namespace)) {
+          break;
+        }
+      }
+      if (isset($domain_namespace)) {
+        break;
+      }
+    }
+    /**
+     * Create the ingress.
+     */
+    $rancher->helpers()->createIngress($domain_name . '-docker-dev-iqual-ch-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $domain_name ."-docker-dev-iqual-ch-autogen");
+  }
+  catch(Exception $e)
+  {
+    var_dump($e->getResponse()->getBody()->getContents());
+  }
+    /*
     // Get all the project and ingress settings from Rancher API.
     $curl_project = curl_init($url);
     curl_setopt($curl_project, CURLOPT_USERPWD, $username . ':' . $password);
@@ -375,15 +415,17 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
             $result = curl_exec($curl);
+
         }
         else {
             $messenger->addMessage('Invalid configuration for the Rancher API. Set Rancher Settings at /admin/config/system/iqual_domain/rancher', 'error');
         }
+
     }
     else {
         $messenger->addMessage('Could not create a rancher domain. Set Rancher Settings at /admin/config/system/iqual_domain/rancher', 'error');
     }
-
+*/
 
 
     /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */

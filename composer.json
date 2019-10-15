@@ -8,7 +8,8 @@
     "drupal/core": ">=8.6",
     "drupal/domain": "*",
     "drupal/domain_site_settings": "*",
-    "drupal/domain_theme_switch": "*"
+    "drupal/domain_theme_switch": "*",
+    "iqual/rancher-api": "*"
   },
   "extra": {
     "patches": {
