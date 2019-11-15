@@ -30,10 +30,13 @@ class RancherForm extends ConfigFormBase
     public function buildForm(array $form, FormStateInterface $form_state)
     {
         $config = $this->config('iq_multidomain_extensions.rancher_settings');
-        $username = $config->get('username');
-        $password = $config->get('password');
+//      $username = $config->get('username');
+				$base_theme = $config->get('base_theme');
+				$rancher_endpoint = $config->get('rancher_endpoint');
 
-        $form['username'] = [
+//      $password = $config->get('password');
+
+/*        $form['username'] = [
             '#type' => 'textfield',
             '#title' => 'Username',
             '#description' => $this->t('Add a valid username for the Rancher API'),
@@ -44,7 +47,20 @@ class RancherForm extends ConfigFormBase
             '#title' => 'Password',
             '#description' => $this->t('Add a valid password for the Rancher API'),
             '#default_value' => isset($password) ? $password : '',
-        ];
+        ];*/
+
+				$form['base_theme'] = [
+					'#type' => 'textfield',
+					'#title' => 'Base theme',
+					'#description' => $this->t('Name of the base theme to be copied.'),
+					'#default_value' => isset($base_theme) ? $base_theme : '',
+				];
+				$form['rancher_endpoint'] = [
+					'#type' => 'textfield',
+					'#title' => 'Rancher endpoint',
+					'#description' => $this->t('The rancher api endpoint.'),
+					'#default_value' => isset($rancher_endpoint) ? $rancher_endpoint : '',
+				];
 
         $form['actions']['#type'] = 'actions';
         $form['actions']['submit'] = [
@@ -62,8 +78,10 @@ class RancherForm extends ConfigFormBase
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
         $this->config('iq_multidomain_extensions.rancher_settings')
-            ->set('username', $form_state->getValue('username'))
-            ->set('password', $form_state->getValue('password'))
+//            ->set('username', $form_state->getValue('username'))
+//            ->set('password', $form_state->getValue('password'))
+						->set('base_theme', $form_state->getValue('base_theme'))
+						->set('rancher_endpoint', $form_state->getValue('rancher_endpoint'))
             ->save();
 
         parent::submitForm($form, $form_state);

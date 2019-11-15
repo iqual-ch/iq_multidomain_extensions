@@ -260,7 +260,7 @@ function _iq_multidomain_extensions_createIqualPattern($definition, $type)
 function iq_multidomain_extensions_form_domain_edit_form_alter(&$form, FormState $form_state, $form_id) {
     $user = \Drupal::currentUser();
     if (!$user->hasPermission('add iq_multidomain_extensions domains')) {
-        $form['id']['#type'] = 'hidden';
+        //$form['id']['#type'] = 'hidden';
         $form['scheme']['#type'] = 'hidden';
         $form['status']['#type'] = 'hidden';
         $form['is_default']['#type'] = 'hidden';
@@ -277,47 +277,64 @@ function iq_multidomain_extensions_form_domain_edit_form_alter(&$form, FormState
 /**
  * Submit handler function for the domain form to create a theme copy.
  */
-function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInterface $form_state) {
-    $new_value = strtolower($form['name']['#value']);
-    $new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
-    $domain_name = str_replace("_", "-", $new_name);
-    $old_name = 'iq_custom';
-    $messenger = \Drupal::messenger();
-    /** Rancher integration */
-    $httpClient = \Drupal::httpClient();
-    $url = "https://rancher.iqual.ch/v3/project";
-    $rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
-    $username = $rancher_settings->get('username');
-    $password = $rancher_settings->get('password');;
+function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInterface $form_state)
+{
+	$new_value = strtolower($form['name']['#value']);
+	$new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
+	$domain_name = str_replace("_", "-", $new_name);
+	$messenger = \Drupal::messenger();
+	/** Rancher integration */
+	$httpClient = \Drupal::httpClient();
 
+	$rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
+	$url = $rancher_settings->get('rancher_endpoint');
+	$RANCHER_TOKEN = getenv("RANCHER_API_TOKEN");;
 
-  try
+	if (strrpos($RANCHER_TOKEN, ":") > 0) {
+		$username = explode(":", $RANCHER_TOKEN)[0];
+		$password = explode(":", $RANCHER_TOKEN)[1];
+	} else {
+			\Drupal::messenger()->addMessage('Rancher token is missing from the environment variables. Cannot create a new domain', 'error');
+			return;
+	}
+
+	$old_name = $rancher_settings->get('base_theme');
+
+		// $namespace = file_get_contents('/var/run/secrets/kubernetes.io/serviceaccount/namespace');
+	try
   {
-    $rancher = new Rancher("https://rancher.iqual.ch/v3/", "token-5w5w6", "8phhqzhzh8p6skv4rkt5pcx77xvv76p9k2frwr2dcpz75vtkgc9nvc");
+    $rancher = new Rancher($url, $username, $password);
     $projects = $rancher->projects()->getAll();
 
     $domain_namespace = null;
     $domain_service = null;
     $project_id = null;
-    foreach($projects as $project) {
-      $ingresses = $rancher->ingresses($project->id)->getAll();
-      foreach ($ingresses as $ingress) {
-        foreach ($ingress->publicEndpoints as $publicEndpoint) {
-          if($publicEndpoint->hostname == $_SERVER['HTTP_HOST']) {
-            $domain_namespace = $ingress->namespaceId;
-            $domain_service = $publicEndpoint->serviceId;
-            $project_id = $project->id;
-            break;
-          }
-        }
-        if (isset($domain_namespace)) {
-          break;
-        }
-      }
-      if (isset($domain_namespace)) {
-        break;
-      }
-    }
+    if (getenv('RANCHER_PROJECT_ID') && getenv('RANCHER_SERVICE_ID')) {
+			$project_id = getenv('RANCHER_PROJECT_ID');
+			$domain_service  = getenv('RANCHER_SERVICE_ID');
+			$domain_namespace  = explode(':',getenv('RANCHER_SERVICE_ID'))[0];
+		}
+    else {
+			foreach($projects as $project) {
+				$ingresses = $rancher->ingresses($project->id)->getAll();
+				foreach ($ingresses as $ingress) {
+					foreach ($ingress->publicEndpoints as $publicEndpoint) {
+						if($publicEndpoint->hostname == $_SERVER['HTTP_HOST']) {
+							$domain_namespace = $ingress->namespaceId;
+							$domain_service = $publicEndpoint->serviceId;
+							$project_id = $project->id;
+							break;
+						}
+					}
+					if (isset($domain_namespace)) {
+						break;
+					}
+				}
+				if (isset($domain_namespace)) {
+					break;
+				}
+			}
+		}
     /**
      * Create the ingress.
      */
@@ -430,6 +447,10 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
 
     /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
     $themeHandler = \Drupal::service('theme_handler');
+    if (!is_dir('themes/custom/' . $old_name)) {
+    	\Drupal::messenger()->addMessage('Base theme is missing. New theme cannot be created.', 'error');
+    	return;
+		}
     if (!is_dir('themes/custom/' . $new_name)) {
         recurse_copy('themes/custom/' . $old_name, 'themes/custom/' . $new_name, $old_name, $new_name);
         $themeInfo = $form['name']['#value'];
@@ -442,6 +463,8 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
         $config->set($form['id']['#value'] . '.site_mail', $mail);
         $config->save();
         change_theme_info('themes/custom/' . $new_name . '/' . $new_name . '.info.yml', $themeInfo);
+        // Sleep 2 seconds in order for theme to be fully moved.
+        sleep(2);
         try {
             $themeHandler->getTheme($new_name);
         } catch (UnknownExtensionException $exception) {
