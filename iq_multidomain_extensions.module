@@ -341,22 +341,31 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
      */
     $kube_friendly_name = str_replace(".", "-", $domain_name . '.' . getenv('DOMAIN_BASE'));
     $ingresses = $rancher->ingresses($project_id)->getAll();
+    $ingress_exists = FALSE;
     foreach ($ingresses as $ingress) {
     	$ingress_hostname = json_decode(json_encode($ingress->rules), true)[0]['host'];
     	if ($ingress->name == $kube_friendly_name . '-ingress' && $ingress_hostname != $form['hostname']['#value']) {
 				$rancher->ingresses($project_id)->remove($ingress->id);
 				$rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name ."-autogen");
-				return;
+        $ingress_exists = TRUE;
+				\Drupal::messenger()->addMessage('Ingress recreated on rancher.');
+				break;
 			}
     	elseif ($ingress->name == $kube_friendly_name . '-ingress' && $ingress_hostname == $form['hostname']['#value']) {
-				return;
+        \Drupal::messenger()->addMessage('Ingress already existed.');
+        $ingress_exists = TRUE;
+				break;
 			}
 		}
-    $new_ingress = $rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name ."-autogen");
+    if (!$ingress_exists) {
+      $new_ingress = $rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name ."-autogen");
+      \Drupal::messenger()->addMessage('New ingress created on rancher.');
+    }
 	}
   catch(Exception $e)
   {
     var_dump($e->getResponse()->getBody()->getContents());
+    \Drupal::messenger()->addMessage('Something went wrong.');
 		\Drupal::messenger()->addMessage($e->getResponse()->getBody()->getContents());
 	}
 
@@ -438,6 +447,9 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
                 $messenger->addMessage(t('An email has been sent for the newly created domain.'));
             }
         }
+    }
+		else {
+      $messenger->addMessage(t('A directory with the name: ' . $new_name . ' already exists.'));
     }
 }
 
@@ -529,7 +541,7 @@ function iq_multidomain_extensions_mail($key, &$message, $params) {
  */
 function recurse_copy($src,$dst, $old_name, $new_name) {
     $dir = opendir($src);
-    @mkdir($dst);
+    mkdir($dst);
     while(false !== ($file = readdir($dir)) ) {
         if (($file != '.' ) && ( $file != '..' )) {
             if (is_dir($src . '/' . $file)) {
@@ -541,7 +553,7 @@ function recurse_copy($src,$dst, $old_name, $new_name) {
                 if(strpos($file, $old_name) != -1) {
                     $file = str_replace($old_name, $new_name, $file);
                 }
-                @file_put_contents($dst . '/' . $file,$file_contents);
+                file_put_contents($dst . '/' . $file,$file_contents);
             }
         }
     }
