@@ -475,14 +475,14 @@ function iq_multidomain_extensions_entity_predelete(Drupal\Core\Entity\EntityInt
 
 		}
 		// Remove menu item and remove it from the pagetree configuration accordingly.
-		$menu_item = Menu::load($new_name);
+		$menu_item = Menu::load(str_replace('_','-',$new_name));
 		if ($menu_item) {
 			$menu_item->delete();
 		}
 		if (\Drupal::moduleHandler()->moduleExists('pagedesigner') && \Drupal::moduleHandler()->moduleExists('pagetree')) {
 			$pagetree_settings = \Drupal::configFactory()->getEditable('pagetree.settings');
 			$pagetree_settings_value = $pagetree_settings->get('menus');
-			unset($pagetree_settings_value[$new_name]);
+			unset($pagetree_settings_value[str_replace('_','-',$new_name)]);
 			$pagetree_settings->set('menus', $pagetree_settings_value);
 			$pagetree_settings->save();
 		}
