@@ -19,7 +19,8 @@ class DomainForm extends OrigForm
 
 		//$form['hostname']['#type'] ='hidden';
 		$form['hostname']['#field_suffix'] = '.' . getenv('DOMAIN_BASE');
-		$form['hostname']['#default_value'] = '';
+		//$form['hostname']['#default_value'] = '';
+		$form['hostname']['#default_value'] = str_replace('.' . getenv('DOMAIN_BASE') , '', $form['hostname']['#default_value']);
 		//$form['id']['#type'] = 'hidden';
     /*$form['url_prefix'] = array(
       '#type' => 'textfield',

@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Extension\Exception\UnknownExtensionException;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\system\Entity\Menu;
 use \Symfony\Component\HttpFoundation\RedirectResponse;
 use \Drupal\Core\Form\FormState;
 use Tyldar\Rancher\Rancher;
@@ -105,7 +106,6 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
     drupal_set_message(t("Pattern Views row plugin does not support preview."), 'warning');
     $variables['pattern'] = ['#type' => 'status_messages'];
   } elseif (!empty($fields)) {
-
     if ($pattern_prefix && in_array($pattern_prefix . $options['pattern'], $pattern_ids)) {
       $pattern_id = $pattern_prefix . $options['pattern'];
     } else {
@@ -288,7 +288,8 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
 
 	$rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
 	$url = $rancher_settings->get('rancher_endpoint');
-	$RANCHER_TOKEN = getenv("RANCHER_API_TOKEN");;
+	$theme_directory = $rancher_settings->get('directory_path');
+	$RANCHER_TOKEN = getenv("RANCHER_API_TOKEN");
 
 	if (strrpos($RANCHER_TOKEN, ":") > 0) {
 		$username = explode(":", $RANCHER_TOKEN)[0];
@@ -338,121 +339,37 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
     /**
      * Create the ingress.
      */
-    $rancher->helpers()->createIngress($domain_name . '-docker-dev-iqual-ch-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $domain_name ."-docker-dev-iqual-ch-autogen");
-  }
+    $kube_friendly_name = str_replace(".", "-", $domain_name . '.' . getenv('DOMAIN_BASE'));
+    $ingresses = $rancher->ingresses($project_id)->getAll();
+    foreach ($ingresses as $ingress) {
+    	$ingress_hostname = json_decode(json_encode($ingress->rules), true)[0]['host'];
+    	if ($ingress->name == $kube_friendly_name . '-ingress' && $ingress_hostname != $form['hostname']['#value']) {
+				$rancher->ingresses($project_id)->remove($ingress->id);
+				$rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name ."-autogen");
+				return;
+			}
+    	elseif ($ingress->name == $kube_friendly_name . '-ingress' && $ingress_hostname == $form['hostname']['#value']) {
+				return;
+			}
+		}
+    $new_ingress = $rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name ."-autogen");
+	}
   catch(Exception $e)
   {
     var_dump($e->getResponse()->getBody()->getContents());
-  }
-    /*
-    // Get all the project and ingress settings from Rancher API.
-    $curl_project = curl_init($url);
-    curl_setopt($curl_project, CURLOPT_USERPWD, $username . ':' . $password);
-    curl_setopt($curl_project, CURLOPT_HTTPHEADER, array(
-        'Content-Type: application/json',
-        'Accept: application/json',
-    ));
-
-    curl_setopt($curl_project, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($curl_project, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-
-    $project = curl_exec($curl_project);
-    $http_code = curl_getinfo( $curl_project, CURLINFO_HTTP_CODE );
-    if ($http_code == "200" || $http_code == "201") {
-        $project_id = json_decode($project,true)['data'][0]['id'];
-        $host =  $_SERVER['HTTP_HOST'];
-
-        $curl_ingress = curl_init($url . '/' . $project_id . '/ingresses');
-        curl_setopt($curl_ingress, CURLOPT_USERPWD, $username . ':' . $password);
-        curl_setopt($curl_ingress, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Accept: application/json',
-        ));
-
-        curl_setopt($curl_ingress, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curl_ingress, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        $ingresses = curl_exec($curl_ingress);
-        $ingresses = json_decode($ingresses, true)['data'];
-        $namespace_id = "";
-        $service_id = "";
-        foreach ($ingresses as $ingress) {
-            $public_endpoints = $ingress['publicEndpoints'];
-            foreach ($public_endpoints as $public_endpoint) {
-                if($public_endpoint['hostname'] == $host) {
-                    $namespace_id = $ingress['namespaceId'];
-                    $service_id = $public_endpoint['serviceId'];
-                    break;
-                }
-            }
-        }
-        if (isset($namespace_id) && !empty($namespace_id)) {
-            $data = [];
-            $data['annotations'] = [
-                "certmanager.k8s.io/cluster-issuer"=>"letsencrypt-prod",
-                "nginx.ingress.kubernetes.io/proxy-body-size"=> "100M",
-                "nginx.ingress.kubernetes.io/proxy-buffer-size"=> "16K"
-            ];
-            $data['defaultBackend'] = null;
-            $data['name'] = $domain_name . '-docker-dev-iqual-ch-ingress';
-            $data['namespaceId'] = $namespace_id;
-            $data['projectId'] = $project_id;
-            $data['rules'] = [
-                [
-                    "host" => $form['hostname']['#value'],
-                    "paths"=> [
-                        [
-                            "serviceId"=> $service_id,
-                            "targetPort"=> 80,
-                            "type"=> "/v3/project/schemas/httpIngressPath"
-                        ]
-                    ],
-                    "type"=> "/v3/project/schemas/ingressRule"
-                ]
-            ];
-            $data['tls'] = [
-                [
-                    'certificateId' => $namespace_id . ":" . $domain_name ."-docker-dev-iqual-ch-autogen",
-                    "hosts" => [
-                        $form['hostname']['#value']
-                    ],
-                    "type" => "/v3/project/schemas/ingressTLS"
-                ]
-            ];
-            $data = json_encode($data);
-            $curl = curl_init();
-            curl_setopt($curl, CURLOPT_USERPWD, $username . ':' . $password);
-            curl_setopt($curl, CURLOPT_POST, true);
-            curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-            curl_setopt($curl, CURLOPT_URL, 'https://rancher.iqual.ch/v3/project/' . $project_id . '/ingresses');
-            curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-                'Content-Type: application/json',
-                'Accept: application/json',
-            ));
-
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-            $result = curl_exec($curl);
-
-        }
-        else {
-            $messenger->addMessage('Invalid configuration for the Rancher API. Set Rancher Settings at /admin/config/system/iqual_domain/rancher', 'error');
-        }
-
-    }
-    else {
-        $messenger->addMessage('Could not create a rancher domain. Set Rancher Settings at /admin/config/system/iqual_domain/rancher', 'error');
-    }
-*/
-
+		\Drupal::messenger()->addMessage($e->getResponse()->getBody()->getContents());
+	}
 
     /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
     $themeHandler = \Drupal::service('theme_handler');
-    if (!is_dir('themes/custom/' . $old_name)) {
-    	\Drupal::messenger()->addMessage('Base theme is missing. New theme cannot be created.', 'error');
+    $themeHandler->refreshInfo();
+    if (!is_dir($theme_directory . '/' . $old_name)) {
+    	\Drupal::messenger()->addMessage('Base theme ' . $theme_directory . '/' . $old_name .' is missing. New theme cannot be created.', 'error');
     	return;
 		}
-    if (!is_dir('themes/custom/' . $new_name)) {
-        recurse_copy('themes/custom/' . $old_name, 'themes/custom/' . $new_name, $old_name, $new_name);
+		$new_name = 'multidomain_' . $new_name;
+		if (!is_dir($theme_directory . '/' . $new_name)) {
+        recurse_copy($theme_directory . '/' . $old_name, $theme_directory . '/' . $new_name, $old_name, $new_name);
         $themeInfo = $form['name']['#value'];
         $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
         $config->set($form['id']['#value'] . '.site_name', $themeInfo);
@@ -462,7 +379,22 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
         }
         $config->set($form['id']['#value'] . '.site_mail', $mail);
         $config->save();
-        change_theme_info('themes/custom/' . $new_name . '/' . $new_name . '.info.yml', $themeInfo);
+        change_theme_info($theme_directory . '/' . $new_name . '/' . $new_name . '.info.yml', $themeInfo);
+				// Add a menu.
+        $menu = Menu::load(str_replace('_','-',$new_name));
+        if ($menu == NULL) {
+          $menu = Menu::create([
+            'id' => str_replace('_','-',$new_name),
+            'label' => $form['name']['#value'] . ' - Main navigation',
+            'description' => 'Main navigation menu for ' . $form['name']['#value'],
+          ]);
+          $menu->save();
+        }
+				if (\Drupal::moduleHandler()->moduleExists('pagedesigner') && \Drupal::moduleHandler()->moduleExists('pagetree')) {
+					$pagetree_settings = \Drupal::configFactory()->getEditable('pagetree.settings');
+					$pagetree_settings->set('menus',array_merge($pagetree_settings->get('menus'), [$menu->id() => $menu->id()]));
+					$pagetree_settings->save();
+				}
         // Sleep 2 seconds in order for theme to be fully moved.
         sleep(2);
         try {
@@ -507,6 +439,63 @@ function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInte
             }
         }
     }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function iq_multidomain_extensions_entity_insert(Drupal\Core\Entity\EntityInterface $entity)
+{
+
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function iq_multidomain_extensions_entity_update(Drupal\Core\Entity\EntityInterface $entity)
+{
+
+}
+
+/**
+ * Implements hook_entity_predelete().
+ */
+function iq_multidomain_extensions_entity_predelete(Drupal\Core\Entity\EntityInterface $entity)
+{
+	if ($entity->bundle() == 'domain') {
+		/** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
+		$themeHandler = \Drupal::service('theme_handler');
+		$new_value = strtolower($entity->get('name'));
+		$new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
+		$new_name = 'multidomain_' . $new_name;
+		try {
+			$themeHandler->getTheme($new_name);
+			$themeHandler->uninstall([$new_name]);
+		} catch (\Exception $e) {
+
+		}
+		// Remove menu item and remove it from the pagetree configuration accordingly.
+		$menu_item = Menu::load($new_name);
+		if ($menu_item) {
+			$menu_item->delete();
+		}
+		if (\Drupal::moduleHandler()->moduleExists('pagedesigner') && \Drupal::moduleHandler()->moduleExists('pagetree')) {
+			$pagetree_settings = \Drupal::configFactory()->getEditable('pagetree.settings');
+			$pagetree_settings_value = $pagetree_settings->get('menus');
+			unset($pagetree_settings_value[$new_name]);
+			$pagetree_settings->set('menus', $pagetree_settings_value);
+			$pagetree_settings->save();
+		}
+		$rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
+		// Remove the theme directory.
+		$theme_directory = $rancher_settings->get('directory_path');
+		if (file_unmanaged_delete_recursive( $theme_directory . '/' . $new_name)) {
+			\Drupal::messenger()->addMessage('Successfully removed theme for the domain.');
+		}
+		else {
+			\Drupal::messenger()->addMessage('Theme was not removed from the directory.', 'warning');
+		}
+	}
 }
 
 /**
@@ -568,9 +557,36 @@ function recurse_copy($src,$dst, $old_name, $new_name) {
  *    The new theme name.
  */
 function change_theme_info($file_name, $theme_name) {
-    $file_contents = file_get_contents($file_name);
-    $file_contents = preg_replace('/name: [a-z0-9].*/', 'name: ' . $theme_name, $file_contents);
-    $file_contents = preg_replace('/description: \'[a-z0-9].*\'/', 'description: ' . $theme_name . ' theme', $file_contents);
-    @file_put_contents($file_name, $file_contents);
+	  $theme_info = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($file_name));
+	  $theme_info['name'] = $theme_name . ' (Multidomain)';
+	  $theme_info['description'] = $theme_name . ' theme, created from multidomain module.';
+	  $yaml = \Symfony\Component\Yaml\Yaml::dump($theme_info);
+    //$file_contents = file_get_contents($file_name);
+    //$file_contents = preg_replace('/name: [a-z0-9].*/', 'name: ' . $theme_name, $file_contents);
+    //$file_contents = preg_replace('/description: \'[a-z0-9].*\'/', 'description: ' . $theme_name . ' theme', $file_contents);
+    @file_put_contents($file_name, $yaml);
+}
 
+/*function iq_multidomain_extensions_ui_patterns_ui_patterns_source_info_alter(&$definitions) {
+	$route = \Drupal::routeMatch()->getRouteObject();
+	$is_admin = \Drupal::service('router.admin_context')->isAdminRoute($route);
+	if (!$is_admin) {
+		return;
+	}
+	$config = \Drupal::config('system.theme');
+	$defaultTheme = $config->get('default');
+
+	foreach($definitions as $id => $definition) {
+		if ($definition['provider'] !== $defaultTheme) {
+			unset($definitions[$id]);
+		}
+	}
+}*/
+
+function iq_multidomain_extensions_views_plugins_row_alter(array &$plugins) {
+
+	// Change the used class of a plugin.
+	$plugins['ui_patterns']['class'] = 'Drupal\\iq_multidomain_extensions\\Plugin\\views\\row\\Pattern';
+	//$plugins['entity:node']['class'] = 'Drupal\\iq_multidomain_extensions\\Plugin\\views\\row\\NodeRow';
+	//$plugins['entity:node']['module'] = 'node';
 }

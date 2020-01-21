@@ -32,6 +32,7 @@ class RancherForm extends ConfigFormBase
         $config = $this->config('iq_multidomain_extensions.rancher_settings');
 //      $username = $config->get('username');
 				$base_theme = $config->get('base_theme');
+				$directory_path = $config->get('directory_path');
 				$rancher_endpoint = $config->get('rancher_endpoint');
 
 //      $password = $config->get('password');
@@ -48,6 +49,13 @@ class RancherForm extends ConfigFormBase
             '#description' => $this->t('Add a valid password for the Rancher API'),
             '#default_value' => isset($password) ? $password : '',
         ];*/
+
+				$form['directory_path'] = [
+					'#type' => 'textfield',
+					'#title' => 'Directory path',
+					'#description' => $this->t('Directory path to the base theme. Example: themes/contrib'),
+					'#default_value' => isset($directory_path) ? $directory_path : '',
+				];
 
 				$form['base_theme'] = [
 					'#type' => 'textfield',
@@ -80,6 +88,7 @@ class RancherForm extends ConfigFormBase
         $this->config('iq_multidomain_extensions.rancher_settings')
 //            ->set('username', $form_state->getValue('username'))
 //            ->set('password', $form_state->getValue('password'))
+						->set('directory_path', $form_state->getValue('directory_path'))
 						->set('base_theme', $form_state->getValue('base_theme'))
 						->set('rancher_endpoint', $form_state->getValue('rancher_endpoint'))
             ->save();
