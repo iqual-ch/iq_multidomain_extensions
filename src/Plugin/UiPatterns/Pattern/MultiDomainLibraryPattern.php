@@ -4,7 +4,6 @@ namespace Drupal\iq_multidomain_extensions\Plugin\UiPatterns\Pattern;
 
 use Drupal\ui_patterns_library\Plugin\UiPatterns\Pattern\LibraryPattern;
 
-
 /**
  * The UI Pattern plugin.
  *
@@ -17,7 +16,6 @@ use Drupal\ui_patterns_library\Plugin\UiPatterns\Pattern\LibraryPattern;
  *   deriver = "\Drupal\iq_multidomain_extensions\Plugin\Deriver\MultiDomainLibraryDeriver"
  * )
  */
-
 class MultiDomainLibraryPattern extends LibraryPattern {
 
 }

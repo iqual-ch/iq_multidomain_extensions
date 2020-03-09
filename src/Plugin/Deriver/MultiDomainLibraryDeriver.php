@@ -5,19 +5,17 @@ namespace Drupal\iq_multidomain_extensions\Plugin\Deriver;
 use Drupal\ui_patterns_library\Plugin\Deriver\LibraryDeriver;
 use Drupal\Component\Serialization\Yaml;
 
-
 /**
  * Class MultiDomainLibraryDeriver.
  *
  * @package Drupal\ui_patterns_library\Deriver
  */
-class MultiDomainLibraryDeriver extends LibraryDeriver
-{
+class MultiDomainLibraryDeriver extends LibraryDeriver {
+
   /**
    * {@inheritdoc}
    */
-  public function getPatterns()
-  {
+  public function getPatterns() {
     $patterns = [];
     $directories = $this->getDirectories();
     $domain_storage = \Drupal::service('entity_type.manager')->getStorage('domain');
@@ -25,18 +23,18 @@ class MultiDomainLibraryDeriver extends LibraryDeriver
       $theme_name = \Drupal::config('domain_theme_switch.settings')->get($domain->id() . '_site');
       if (!array_key_exists($theme_name, $directories)) {
         $directories[$theme_name] = [
-          'use_prefix' => true,
-          'directory' => DRUPAL_ROOT . '/' . drupal_get_path('theme', $theme_name)
+          'use_prefix' => TRUE,
+          'directory' => DRUPAL_ROOT . '/' . drupal_get_path('theme', $theme_name),
         ];
       }
     }
 
     foreach ($directories as $provider => $directory) {
 
-      $use_prefix = false;
+      $use_prefix = FALSE;
       if (is_array($directory)) {
         if ($directory['use_prefix']) {
-          $use_prefix = true;
+          $use_prefix = TRUE;
         }
         $directory = $directory['directory'];
       }
@@ -50,7 +48,8 @@ class MultiDomainLibraryDeriver extends LibraryDeriver
 
             if ($use_prefix) {
               $definition['id'] = $provider . '_' . $id;
-            } else {
+            }
+            else {
               $definition['id'] = $id;
             }
 
@@ -72,4 +71,5 @@ class MultiDomainLibraryDeriver extends LibraryDeriver
 
     return $patterns;
   }
+
 }
