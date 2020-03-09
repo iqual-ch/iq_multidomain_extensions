@@ -5,4 +5,5 @@ package: Domain
 type: module
 core: 8.x
 dependencies:
-  - domain
+  - domain:domain
+  - domain_site_settings:domain_site_settings

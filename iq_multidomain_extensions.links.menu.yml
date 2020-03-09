@@ -1,0 +1,6 @@
+iq_multidomain_extensions.settings:
+  title: 'Domains'
+  route_name: iq_multidomain_extensions.settings
+  description: 'Domain configuration.'
+  parent: system.admin_config_system
+  weight: 9

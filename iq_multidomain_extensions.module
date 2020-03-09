@@ -1,25 +1,37 @@
 <?php
 
+/**
+ * @file
+ */
 
-use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\ui_patterns\UiPatterns;
+use Symfony\Component\Yaml\Yaml;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\Core\Entity\EntityStorageException;
+use Drupal\Core\Extension\Exception\UnknownExtensionException;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\system\Entity\Menu;
+use Drupal\Core\Form\FormState;
+use Tyldar\Rancher\Rancher;
 
+/**
+ *
+ */
 function iq_multidomain_extensions_install() {
   module_set_weight('iq_multidomain_extensions', 999);
 }
 
 /**
- * @param EntityTypeInterface[] $entity_types
+ * @param \Drupal\Core\Entity\EntityTypeInterface[] $entity_types
  */
-function iq_multidomain_extensions_entity_type_alter(&$entity_types)
-{
+function iq_multidomain_extensions_entity_type_alter(&$entity_types) {
   if (isset($entity_types['domain'])) {
     $entity_types['domain']->setHandlerClass(
       'form',
       [
         'default' => 'Drupal\iq_multidomain_extensions\DomainForm',
         'edit' => 'Drupal\iq_multidomain_extensions\DomainForm',
-        'delete' => 'Drupal\domain\Form\DomainDeleteForm'
+        'delete' => 'Drupal\domain\Form\DomainDeleteForm',
       ]
     );
   }
@@ -28,8 +40,7 @@ function iq_multidomain_extensions_entity_type_alter(&$entity_types)
 /**
  * Implements hook_token_info().
  */
-function iq_multidomain_extensions_token_info()
-{
+function iq_multidomain_extensions_token_info() {
   $info = [];
   $info['types']['iq_domain'] = ['name' => t('iqual Domain Extensions'), 'description' => t('iqual Domain Extensions')];
   $info['tokens']['iq_domain']['url_prefix'][] = 'iqual Domain URL prefix';
@@ -39,11 +50,10 @@ function iq_multidomain_extensions_token_info()
 /**
  * Implements hook_tokens().
  */
-function  iq_multidomain_extensions_tokens($type, $tokens, array $data, array $options, \Drupal\Core\Render\BubbleableMetadata $bubbleable_metadata)
-{
+function iq_multidomain_extensions_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
 
   $replacements = [];
-  if ($type == 'iq_domain' && !empty($data['node']) && $data['node']->field_domain_source->entity ) {
+  if ($type == 'iq_domain' && !empty($data['node']) && $data['node']->field_domain_source->entity) {
 
     foreach ($tokens as $name => $original) {
       // Find the desired token by name.
@@ -57,15 +67,13 @@ function  iq_multidomain_extensions_tokens($type, $tokens, array $data, array $o
   return $replacements;
 }
 
-
 /**
  * Preprocess hook.
  *
  * @param array $variables
  *   Theme variables.
  */
-function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variables)
-{
+function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variables) {
   /** @var \Drupal\views\ResultRow $row */
   /** @var \Drupal\views\ViewExecutable $view */
   /** @var \Drupal\ui_patterns_views\Plugin\views\row\Pattern $row_plugin */
@@ -76,7 +84,7 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
   $options = $variables['options'];
   $row = $variables['row'];
 
-  $pattern_prefix = false;
+  $pattern_prefix = FALSE;
 
   if (\Drupal::service('theme.manager')->getActiveTheme()->getName() != \Drupal::config('system.theme')->get('default')) {
     $pattern_prefix = \Drupal::service('theme.manager')->getActiveTheme()->getName() . '_';
@@ -97,11 +105,12 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
   if ($view->preview && !isset($view->element['#embed'])) {
     drupal_set_message(t("Pattern Views row plugin does not support preview."), 'warning');
     $variables['pattern'] = ['#type' => 'status_messages'];
-  } elseif (!empty($fields)) {
-
+  }
+  elseif (!empty($fields)) {
     if ($pattern_prefix && in_array($pattern_prefix . $options['pattern'], $pattern_ids)) {
       $pattern_id = $pattern_prefix . $options['pattern'];
-    } else {
+    }
+    else {
       $pattern_id = $options['pattern'];
     }
 
@@ -122,127 +131,316 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
   }
 }
 
-
-
-function iq_multidomain_extensions_pagedesigner_libraries_alter(&$libraries)
-{
-  $patternManager = \Drupal::service('plugin.manager.ui_patterns');
-  foreach ($patternManager->getDefinitions() as $id => $definition) {
-      $pattern_definition = $definition->toArray();
-      if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
-          foreach ($definition->getLibrariesNames() as $library) {
-              if (strpos($library, 'pagedesigner') !== false) {
-                  $libraries[] = $library;
-              }
-          }
-      }
+/**
+ * Implements hook_form_BASE_ID_alter().
+ */
+function iq_multidomain_extensions_form_domain_edit_form_alter(&$form, FormState $form_state, $form_id) {
+  $user = \Drupal::currentUser();
+  if (!$user->hasPermission('add iq_multidomain_extensions domains')) {
+    // $form['id']['#type'] = 'hidden';
+    $form['scheme']['#type'] = 'hidden';
+    $form['status']['#type'] = 'hidden';
+    $form['is_default']['#type'] = 'hidden';
+    $form['validate_url']['#type'] = 'hidden';
+    $form['weight']['#type'] = 'hidden';
+    $form['scheme']['#default_value'] = 'https';
+    $form['status']['#default_value'] = 1;
+    $form['is_default']['#default_value'] = FALSE;
+    $form['validate_url']['#default_value'] = FALSE;
   }
+  $form['actions']['submit']['#submit'][] = 'iq_multidomain_extensions_domain_edit_form_submit';
 }
 
-function iq_multidomain_extensions_pagedesigner_libraries_internal_alter(&$libraries)
-{
-  $patternManager = \Drupal::service('plugin.manager.ui_patterns');
-  foreach ($patternManager->getDefinitions() as $id => $definition) {
-      $pattern_definition = $definition->toArray();
-      if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
-          foreach ($definition->getLibrariesNames() as $library) {
-              if (strpos($library, 'internal') !== false) {
-                  $libraries[] = $library;
-              }
-          }
-      }
+/**
+ * Submit handler function for the domain form to create a theme copy.
+ */
+function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInterface $form_state) {
+  $new_value = strtolower($form['name']['#value']);
+  $new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
+  $domain_name = str_replace("_", "-", $new_name);
+  $messenger = \Drupal::messenger();
+  /** Rancher integration */
+  $httpClient = \Drupal::httpClient();
+
+  $rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
+  $url = $rancher_settings->get('rancher_endpoint');
+  $theme_directory = $rancher_settings->get('directory_path');
+  $RANCHER_TOKEN = getenv("RANCHER_API_TOKEN");
+
+  if (strrpos($RANCHER_TOKEN, ":") > 0) {
+    $username = explode(":", $RANCHER_TOKEN)[0];
+    $password = explode(":", $RANCHER_TOKEN)[1];
   }
-}
-
-function iq_multidomain_extensions_pagedesigner_libraries_live_alter(&$libraries)
-{
-  $patternManager = \Drupal::service('plugin.manager.ui_patterns');
-  foreach ($patternManager->getDefinitions() as $id => $definition) {
-
-      $pattern_definition = $definition->toArray();
-      if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
-          foreach ($definition->getLibrariesNames() as $library) {
-              if (strpos($library, 'live') !== false) {
-                  $libraries[] = $library;
-              }
-          }
-      }
-  }
-}
-
-function iq_multidomain_extensions_pagedesigner_patterns_alter(&$patterns, $type)
-{
-  $patternManager = \Drupal::service('plugin.manager.ui_patterns');
-  foreach ($patternManager->getDefinitions() as $id => $definition) {
-      $pattern_definition = $definition->toArray();
-      if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
-          if (strpos($definition->getBasePath(), $type) !== false && strpos($definition->getBasePath(), 'designer') === false) {
-              $patternMarkup = _iq_multidomain_extensions_createIqualPattern($definition, $type);
-              $patterns[$id] = array('id' => $id, 'pattern' => $patternMarkup, 'label' => $definition->getLabel(), 'definition' => $definition->toArray());
-          }
-      }
+  else {
+    \Drupal::messenger()->addMessage('Rancher token is missing from the environment variables. Cannot create a new domain', 'error');
+    return;
   }
 
-}
-function iq_multidomain_extensions_pagedesigner_patterns_designer_alter(&$patterns, $type)
-{
-$patternManager = \Drupal::service('plugin.manager.ui_patterns');
-  foreach ($patternManager->getDefinitions() as $id => $definition) {
-      $pattern_definition = $definition->toArray();
-      if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
-          if (strpos($definition->getBasePath(), $type) !== false && strpos($definition->getBasePath(), 'designer') !== false) {
-              $patternMarkup = _iq_multidomain_extensions_createIqualPattern($definition, $type);
-              $patterns[$id] = array('id' => $id, 'pattern' => $patternMarkup, 'label' => $definition->getLabel(), 'definition' => $definition->toArray());
+  $old_name = $rancher_settings->get('base_theme');
+
+  // $namespace = file_get_contents('/var/run/secrets/kubernetes.io/serviceaccount/namespace');
+  try {
+    $rancher = new Rancher($url, $username, $password);
+    $domain_namespace = NULL;
+    $domain_service = NULL;
+    $project_id = NULL;
+    if (getenv('RANCHER_PROJECT_ID') && getenv('RANCHER_SERVICE_ID')) {
+      $project_id = getenv('RANCHER_PROJECT_ID');
+      $domain_service = getenv('RANCHER_SERVICE_ID');
+      $domain_namespace = explode(':', getenv('RANCHER_SERVICE_ID'))[0];
+    }
+    else {
+      $projects = $rancher->projects()->getAll();
+      foreach ($projects as $project) {
+        $ingresses = $rancher->ingresses($project->id)->getAll();
+        foreach ($ingresses as $ingress) {
+          foreach ($ingress->publicEndpoints as $publicEndpoint) {
+            if ($publicEndpoint->hostname == $_SERVER['HTTP_HOST']) {
+              $domain_namespace = $ingress->namespaceId;
+              $domain_service = $publicEndpoint->serviceId;
+              $project_id = $project->id;
+              break;
+            }
           }
+          if (isset($domain_namespace)) {
+            break;
+          }
+        }
+        if (isset($domain_namespace)) {
+          break;
+        }
       }
+    }
+    /**
+     * Create the ingress.
+     */
+    $kube_friendly_name = str_replace(".", "-", $domain_name . '.' . getenv('DOMAIN_BASE'));
+    $ingresses = $rancher->ingresses($project_id)->getAll();
+    $ingress_exists = FALSE;
+    foreach ($ingresses as $ingress) {
+      $ingress_hostname = json_decode(json_encode($ingress->rules), TRUE)[0]['host'];
+      if ($ingress->name == $kube_friendly_name . '-ingress' && $ingress_hostname != $form['hostname']['#value']) {
+        // $rancher->ingresses($project_id)->remove($ingress->id);
+        // $rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name . "-autogen");
+        $ingress_exists = TRUE;
+        \Drupal::messenger()->addMessage('Ingress recreated on rancher.');
+        break;
+      }
+      elseif ($ingress->name == $kube_friendly_name . '-ingress' && $ingress_hostname == $form['hostname']['#value']) {
+        \Drupal::messenger()->addMessage('Ingress already existed.');
+        $ingress_exists = TRUE;
+        break;
+      }
+    }
+    if (!$ingress_exists) {
+      $new_ingress = $rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name . "-autogen");
+      \Drupal::messenger()->addMessage('New ingress created on rancher.');
+    }
+  }
+  catch (Exception $e) {
+    var_dump($e->getResponse());
+    die();
+    \Drupal::messenger()->addMessage('Something went wrong.');
+    \Drupal::messenger()->addMessage($e->getResponse()->getBody()->getContents());
+  }
+
+  /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
+  $themeHandler = \Drupal::service('theme_handler');
+  $themeHandler->refreshInfo();
+  if (!is_dir($theme_directory . '/' . $old_name)) {
+    \Drupal::messenger()->addMessage('Base theme ' . $theme_directory . '/' . $old_name . ' is missing. New theme cannot be created.', 'error');
+    return;
+  }
+  $new_name = 'multidomain_' . $new_name;
+  if (!is_dir($theme_directory . '/' . $new_name)) {
+    recurse_copy($theme_directory . '/' . $old_name, $theme_directory . '/' . $new_name, $old_name, $new_name);
+    $themeInfo = $form['name']['#value'];
+    $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
+    $config->set($form['id']['#value'] . '.site_name', $themeInfo);
+    $mail = \Drupal::configFactory()->get('system.site')->get('mail');
+    if (!isset($mail) || empty($mail)) {
+      $mail = 'info@docker.iqual.ch';
+    }
+    $config->set($form['id']['#value'] . '.site_mail', $mail);
+    $config->save();
+    change_theme_info($theme_directory . '/' . $new_name . '/' . $new_name . '.info.yml', $themeInfo);
+    // Add a menu.
+    $menu = Menu::load(str_replace('_', '-', $new_name));
+    if ($menu == NULL) {
+      $menu = Menu::create([
+        'id' => str_replace('_', '-', $new_name),
+        'label' => $form['name']['#value'] . ' - Main navigation',
+        'description' => 'Main navigation menu for ' . $form['name']['#value'],
+      ]);
+      $menu->save();
+    }
+    if (\Drupal::moduleHandler()->moduleExists('pagedesigner') && \Drupal::moduleHandler()->moduleExists('pagetree')) {
+      $pagetree_settings = \Drupal::configFactory()->getEditable('pagetree.settings');
+      $pagetree_settings->set('menus', array_merge($pagetree_settings->get('menus'), [$menu->id() => $menu->id()]));
+      $pagetree_settings->save();
+    }
+    // Sleep 2 seconds in order for theme to be fully moved.
+    sleep(2);
+    try {
+      $themeHandler->getTheme($new_name);
+    }
+    catch (UnknownExtensionException $exception) {
+      /** @var \Drupal\Core\Extension\ThemeInstaller $themeInstaller */
+      $themeInstaller = \Drupal::service('theme_installer');
+      try {
+        $themeInstaller->install([$new_name]);
+      }
+      catch (EntityStorageException $e) {
+        $messenger->addMessage(t('Theme is already stored.'), 'warning');
+      }
+      catch (UnknownExtensionException $e) {
+        $messenger->addMessage(t('There was a problem with installing the theme.'), 'error');
+      }
+    }
+    $config = \Drupal::service('config.factory')->getEditable('domain_theme_switch.settings');
+    $config->set($form['id']['#value'] . '_site', $new_name);
+    $config->save();
+    // Copy all the settings from the previous to the new theme.
+    $data = \Drupal::configFactory()->get('iq_custom.settings')->getRawData();
+    \Drupal::configFactory()->getEditable($new_name . '.settings')->setData($data)->save();
+
+    // Send an email to notify about setting up the new domain.
+    $mailManager = \Drupal::service('plugin.manager.mail');
+    $user = \Drupal::currentUser();
+    $module = 'iq_multidomain_extensions';
+    $key = 'create_domain';
+    $to = $user->getEmail();
+    $params['message'] = 'A new domain has been created with a hostname ' . $form['hostname']['#value'] . ' for the ' . $form['name']['#value'] . ' site.';
+    $params['domain_title'] = $form['name']['#value'];
+    $send = TRUE;
+
+    if (isset($to) && !empty($to)) {
+      $result = $mailManager->mail($module, $key, $to, 'en', $params, NULL, $send);
+      if ($result['result'] !== TRUE) {
+        $messenger->addMessage(t('There was a problem sending your message and it was not sent.'), 'error');
+      }
+      else {
+        $messenger->addMessage(t('An email has been sent for the newly created domain.'));
+      }
+    }
+  }
+  else {
+    $messenger->addMessage(t('A directory with the name: ' . $new_name . ' already exists.'));
   }
 }
 
 /**
-* Build patterns using UI Pattern API's
-*
-* @param string $definition
-* @return array
-*/
-function _iq_multidomain_extensions_createIqualPattern($definition, $type)
-{
-  $patternMarkup = '';
-  $id = $definition['id'];
-  $label = $definition['label'];
-  $elements[$id] = [
-      '#type' => 'pattern_preview',
-      '#id' => $id,
-  ];
-  /* Render a pattern preview as displayed on the pagebuilder page */
-  $preview = \Drupal::service('renderer')->render($elements);
-  /* Get fields */
-  $renderedFields = $definition->getFields();
-  $info[$id] = [
-      '#type' => 'pattern',
-      '#id' => $id,
-      '#fields' => [],
-  ];
-  foreach ($renderedFields as $key => $value) {
-      $placeholderName = $value->getName();
-      $placeholderType = $value->getType();
-      $info[$id]['#fields'][$placeholderName] = '{{' . $placeholderName . '}}';
+ * Implements hook_entity_predelete().
+ */
+function iq_multidomain_extensions_entity_predelete(EntityInterface $entity) {
+  if ($entity->bundle() == 'domain') {
+    /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
+    $themeHandler = \Drupal::service('theme_handler');
+    $new_value = strtolower($entity->get('name'));
+    $new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
+    $new_name = 'multidomain_' . $new_name;
+    try {
+      $themeHandler->getTheme($new_name);
+      $themeHandler->uninstall([$new_name]);
+    }
+    catch (\Exception $e) {
+
+    }
+    // Remove menu item and remove it from the pagetree configuration accordingly.
+    $menu_item = Menu::load(str_replace('_', '-', $new_name));
+    if ($menu_item) {
+      $menu_item->delete();
+    }
+    if (\Drupal::moduleHandler()->moduleExists('pagedesigner') && \Drupal::moduleHandler()->moduleExists('pagetree')) {
+      $pagetree_settings = \Drupal::configFactory()->getEditable('pagetree.settings');
+      $pagetree_settings_value = $pagetree_settings->get('menus');
+      unset($pagetree_settings_value[str_replace('_', '-', $new_name)]);
+      $pagetree_settings->set('menus', $pagetree_settings_value);
+      $pagetree_settings->save();
+    }
+    $rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
+    // Remove the theme directory.
+    $theme_directory = $rancher_settings->get('directory_path');
+    if (file_unmanaged_delete_recursive($theme_directory . '/' . $new_name)) {
+      \Drupal::messenger()->addMessage('Successfully removed theme for the domain.');
+    }
+    else {
+      \Drupal::messenger()->addMessage('Theme was not removed from the directory.', 'warning');
+    }
   }
-  /* Render a pattern as displayed on the pagebuilder page */
-  $pattern = \Drupal::service('renderer')->render($info);
-  /* Append html with rendered patterns */
-  if ($type == 'structural') {
-      $patterntype = $id;
-      if (strpos($patterntype, 'row') !== false) {
-          $patterntype = 'row';
+}
+
+/**
+ * Implements hook_mail().
+ */
+function iq_multidomain_extensions_mail($key, &$message, $params) {
+  $messenger = \Drupal::messenger();
+  $options = [
+    'langcode' => $message['langcode'],
+  ];
+  switch ($key) {
+    case 'create_domain':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = t('Domain created: @title', ['@title' => $params['domain_title']], $options);
+      $message['body'][] = $params['message'];
+      break;
+  }
+}
+
+/**
+ * Function to copy a theme folder.
+ *
+ * @param $src
+ *   The source of the theme.
+ * @param $dst
+ *   The destination of the theme copy.
+ * @param $old_name
+ *   Old name of the theme.
+ * @param $new_name
+ *   New name for the theme copy.
+ */
+function recurse_copy($src, $dst, $old_name, $new_name) {
+  $dir = opendir($src);
+  mkdir($dst);
+  while (FALSE !== ($file = readdir($dir))) {
+    if (($file != '.') && ($file != '..')) {
+      if (is_dir($src . '/' . $file)) {
+        recurse_copy($src . '/' . $file, $dst . '/' . $file, $old_name, $new_name);
       }
-      $patternMarkup = '<div class="iqbm-row" data-pattern-type="' . $patterntype . '">';
-  } else {
-      $patternMarkup = '<div class="iqbm-element" data-pattern-type="' . $id . '">';
+      else {
+        $file_contents = file_get_contents($src . '/' . $file);
+        $file_contents = str_replace($old_name, $new_name, $file_contents);
+        if (strpos($file, $old_name) != -1) {
+          $file = str_replace($old_name, $new_name, $file);
+        }
+        file_put_contents($dst . '/' . $file, $file_contents);
+      }
+    }
   }
-  $patternMarkup .= '<span class="iqbm-icon iqbm-drag"><i class="fa fa-arrows"></i></span>
-                       <div class="iqbm-preview"><div class="iqbm-description"><div>' . $label . '</div></div>';
-  $patternMarkup .= '<div class="iqbm-element-preview"><div class="iqbm-button iqbm-text"><a href="#">
-      ' . $preview . '</a></div></div></div>';
-  $patternMarkup .= '<div class="iqbm-view">' . $pattern . '</div></div>';
-  return $patternMarkup;
+  closedir($dir);
+}
+
+/**
+ * Renames the theme name of the new theme copy for proper functionality.
+ *
+ * @param $file_name
+ *   The file name in which the theme will be renamed.
+ * @param $theme_name
+ *   The new theme name.
+ */
+function change_theme_info($file_name, $theme_name) {
+  $theme_info = Yaml::parse(file_get_contents($file_name));
+  $theme_info['name'] = $theme_name . ' (Multidomain)';
+  $theme_info['description'] = $theme_name . ' theme, created from multidomain module.';
+  $yaml = Yaml::dump($theme_info);
+  // $file_contents = file_get_contents($file_name);
+  // $file_contents = preg_replace('/name: [a-z0-9].*/', 'name: ' . $theme_name, $file_contents);
+  // $file_contents = preg_replace('/description: \'[a-z0-9].*\'/', 'description: ' . $theme_name . ' theme', $file_contents);
+  @file_put_contents($file_name, $yaml);
+}
+
+function iq_multidomain_extensions_views_plugins_row_alter(array &$plugins) {
+
+  // Change the used class of a plugin.
+  $plugins['ui_patterns']['class'] = 'Drupal\\iq_multidomain_extensions\\Plugin\\views\\row\\Pattern';
 }

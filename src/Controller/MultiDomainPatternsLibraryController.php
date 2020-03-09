@@ -2,6 +2,8 @@
 
 namespace Drupal\iq_multidomain_extensions\Controller;
 
+use Drupal\Core\Form\FormState;
+use Drupal\iq_multidomain_extensions\IqualDomainListBuilder;
 use Drupal\ui_patterns_library\Controller\PatternsLibraryController;
 
 /**
@@ -19,17 +21,17 @@ class MultiDomainPatternsLibraryController extends PatternsLibraryController {
    */
   public function overview() {
     /** @var \Drupal\ui_patterns\Definition\PatternDefinition $definition */
-
     $definitions = [];
+
     foreach ($this->patternsManager->getDefinitions() as $id => $definition) {
       $pattern_definition = $definition->toArray();
 
-      if ( $pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName() ) {
-       $definitions[$id] = $pattern_definition;
-       $definitions[$id]['rendered']['#type'] = 'pattern_preview';
-       $definitions[$id]['rendered']['#id'] = $definition->id();
-       $definitions[$id]['meta']['#theme'] = 'patterns_meta_information';
-       $definitions[$id]['meta']['#pattern'] = $pattern_definition;
+      if ($pattern_definition['provider'] == \Drupal::service('theme.manager')->getActiveTheme()->getName()) {
+        $definitions[$id] = $pattern_definition;
+        $definitions[$id]['rendered']['#type'] = 'pattern_preview';
+        $definitions[$id]['rendered']['#id'] = $definition->id();
+        $definitions[$id]['meta']['#theme'] = 'patterns_meta_information';
+        $definitions[$id]['meta']['#pattern'] = $pattern_definition;
       }
     }
 
@@ -37,6 +39,19 @@ class MultiDomainPatternsLibraryController extends PatternsLibraryController {
       '#theme' => 'patterns_overview_page',
       '#patterns' => $definitions,
     ];
+  }
+
+  /**
+   * Handler function to display a list of domains.
+   *
+   * @return array
+   *   The form render array to display on the domains page.
+   */
+  public function domainList() {
+    $form_state = new FormState();
+    $user_role = \Drupal::entityTypeManager()->getListBuilder('domain');
+    $form = IqualDomainListBuilder::createInstance(\Drupal::getContainer(), $user_role->getStorage()->getEntityType())->buildForm([], $form_state);
+    return $form;
   }
 
 }

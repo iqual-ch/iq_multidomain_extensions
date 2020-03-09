@@ -1,0 +1,9 @@
+iq_multidomain_extensions.settings:
+  title: Configure
+  route_name: iq_multidomain_extensions.settings
+  base_route: iq_multidomain_extensions.settings
+
+iq_multidomain_extensions.rancher_settings:
+  title: 'Rancher Configuration'
+  route_name: iq_multidomain_extensions.rancher_settings
+  base_route: iq_multidomain_extensions.settings

@@ -8,9 +8,11 @@
     "drupal/core": ">=8.6",
     "drupal/domain": "*",
     "drupal/domain_site_settings": "*",
-    "drupal/domain_theme_switch": "*"
+    "drupal/domain_theme_switch": "*",
+    "iqual/rancher-api": "*"
   },
   "extra": {
+    "enable-patching": true,
     "patches": {
       "drupal/domain_site_settings": {
         "Issue 2930391 - Circular Error or Conflict with Language_Manager": "https://www.drupal.org/files/issues/2018-10-09/2930391-21.patch"
