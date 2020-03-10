@@ -19,18 +19,18 @@ class MultiDomainLibraryDeriver extends LibraryDeriver {
     $patterns = [];
     $directories = $this->getDirectories();
     $domain_storage = \Drupal::service('entity_type.manager')->getStorage('domain');
+
+    $installedThemes = array_keys(\Drupal::service('theme_handler')->listInfo());
     foreach ($domain_storage->loadMultipleSorted() as $domain) {
       $theme_name = \Drupal::config('domain_theme_switch.settings')->get($domain->id() . '_site');
-      if (!array_key_exists($theme_name, $directories)) {
+      if (!array_key_exists($theme_name, $directories) && in_array($theme_name, $installedThemes)) {
         $directories[$theme_name] = [
           'use_prefix' => TRUE,
           'directory' => DRUPAL_ROOT . '/' . drupal_get_path('theme', $theme_name),
         ];
       }
     }
-
     foreach ($directories as $provider => $directory) {
-
       $use_prefix = FALSE;
       if (is_array($directory)) {
         if ($directory['use_prefix']) {
