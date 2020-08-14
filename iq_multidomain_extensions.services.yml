@@ -3,11 +3,6 @@ services:
     class: Drupal\iq_multidomain_extensions\Routing\MultiDomainRouteSubscriber
     tags:
       - { name: event_subscriber }
-  iq_multidomain_extensions.ignore_trusted_host_subscriber:
-    class: Drupal\iq_multidomain_extensions\EventSubscriber\IgnoreTrustedHostsSubscriber
-    arguments: []
-    tags:
-      - {name: event_subscriber}
   iq_multidomain_extensions.service.domain:
     class: Drupal\iq_multidomain_extensions\Service\DomainService
     arguments: ['@messenger', '@event_dispatcher']
