@@ -1,6 +1,6 @@
-iq_multidomain_extensions.settings:
-  title: 'Domains'
-  route_name: iq_multidomain_extensions.settings
-  description: 'Domain configuration.'
-  parent: system.admin_config_system
+iq_multidomain_extensions.general_settings:
+  title: 'iqual multidomain configuration.'
+  route_name: iq_multidomain_extensions.general_settings
+  description: 'General configuration for iqual multidomain extension.'
+  parent: system.admin_config_development
   weight: 9

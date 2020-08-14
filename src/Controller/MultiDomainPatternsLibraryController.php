@@ -41,17 +41,4 @@ class MultiDomainPatternsLibraryController extends PatternsLibraryController {
     ];
   }
 
-  /**
-   * Handler function to display a list of domains.
-   *
-   * @return array
-   *   The form render array to display on the domains page.
-   */
-  public function domainList() {
-    $form_state = new FormState();
-    $user_role = \Drupal::entityTypeManager()->getListBuilder('domain');
-    $form = IqualDomainListBuilder::createInstance(\Drupal::getContainer(), $user_role->getStorage()->getEntityType())->buildForm([], $form_state);
-    return $form;
-  }
-
 }

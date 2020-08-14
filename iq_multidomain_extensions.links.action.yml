@@ -1,5 +1,0 @@
-iq_multidomain_extensions.add_domain:
-  route_name: iq_multidomain_extensions.add_domain
-  title: 'Create domain'
-  appears_on:
-    - iq_multidomain_extensions.settings
