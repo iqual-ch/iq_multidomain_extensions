@@ -20,7 +20,6 @@ class DomainForm extends OrigForm {
     $moduleHandler = \Drupal::service('module_handler');
     $domainThemeSwitch = $moduleHandler->moduleExists('domain_theme_switch');
     $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
-
     $form['extensions'] = [
       '#type' => 'details',
       '#title' => $this->t('iqual extensions'),
@@ -34,10 +33,9 @@ class DomainForm extends OrigForm {
       '#description' => $this->t('The url prefix for aliases for this domain.'),
       '#default_value' => $this->entity->getThirdPartySetting('iq_multidomain_extensions', 'url_prefix'),
     ];
-$form['validate_url']['#default_value'] = FALSE;
+    $form['validate_url']['#default_value'] = FALSE;
 
     if ($this->entity->isNew()) {
-
       $form['extensions']['create_menu'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Create menu.'),
