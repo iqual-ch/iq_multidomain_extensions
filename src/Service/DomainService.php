@@ -7,9 +7,6 @@ use Tyldar\Rancher\Rancher;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\system\Entity\Menu;
 use Drupal\styling_profiles\Entity\StylingProfile;
-use Symfony\Component\Filesystem\Filesystem;
-
-
 
 /**
  *
@@ -222,56 +219,54 @@ class DomainService {
     }
   }
 
-
-/**
- * Function to copy a theme folder.
- *
- * @param $src
- *   The source of the theme.
- * @param $dst
- *   The destination of the theme copy.
- * @param $old_name
- *   Old name of the theme.
- * @param $new_name
- *   New name for the theme copy.
- */
-function recursiveCopy($src, $dst, $old_name, $new_name) {
-  $dir = opendir($src);
-  mkdir($dst);
-  while (FALSE !== ($file = readdir($dir))) {
-    if (($file != '.') && ($file != '..')) {
-      if (is_dir($src . '/' . $file)) {
-        $this->recurseCopy($src . '/' . $file, $dst . '/' . $file, $old_name, $new_name);
-      }
-      else {
-        $file_contents = file_get_contents($src . '/' . $file);
-        $file_contents = str_replace($old_name, $new_name, $file_contents);
-        if (strpos($file, $old_name) != -1) {
-          $file = str_replace($old_name, $new_name, $file);
+  /**
+   * Function to copy a theme folder.
+   *
+   * @param $src
+   *   The source of the theme.
+   * @param $dst
+   *   The destination of the theme copy.
+   * @param $old_name
+   *   Old name of the theme.
+   * @param $new_name
+   *   New name for the theme copy.
+   */
+  public function recursiveCopy($src, $dst, $old_name, $new_name) {
+    $dir = opendir($src);
+    mkdir($dst);
+    while (FALSE !== ($file = readdir($dir))) {
+      if (($file != '.') && ($file != '..')) {
+        if (is_dir($src . '/' . $file)) {
+          $this->recurseCopy($src . '/' . $file, $dst . '/' . $file, $old_name, $new_name);
         }
-        file_put_contents($dst . '/' . $file, $file_contents);
+        else {
+          $file_contents = file_get_contents($src . '/' . $file);
+          $file_contents = str_replace($old_name, $new_name, $file_contents);
+          if (strpos($file, $old_name) != -1) {
+            $file = str_replace($old_name, $new_name, $file);
+          }
+          file_put_contents($dst . '/' . $file, $file_contents);
+        }
       }
     }
+    closedir($dir);
   }
-  closedir($dir);
-}
 
-/**
- * Renames the theme name of the new theme copy for proper functionality.
- *
- * @param $file_name
- *   The file name in which the theme will be renamed.
- * @param $theme_name
- *   The new theme name.
- */
-function changeThemeInfo($file_name, $theme_name) {
-  $theme_info = Yaml::parse(file_get_contents($file_name));
-  $theme_info['name'] = $theme_name . ' (Multidomain)';
-  $theme_info['description'] = $theme_name . ' theme, created from multidomain module.';
-  $yaml = Yaml::dump($theme_info);
-  @file_put_contents($file_name, $yaml);
-}
-
+  /**
+   * Renames the theme name of the new theme copy for proper functionality.
+   *
+   * @param $file_name
+   *   The file name in which the theme will be renamed.
+   * @param $theme_name
+   *   The new theme name.
+   */
+  public function changeThemeInfo($file_name, $theme_name) {
+    $theme_info = Yaml::parse(file_get_contents($file_name));
+    $theme_info['name'] = $theme_name . ' (Multidomain)';
+    $theme_info['description'] = $theme_name . ' theme, created from multidomain module.';
+    $yaml = Yaml::dump($theme_info);
+    @file_put_contents($file_name, $yaml);
+  }
 
   /**
    *
@@ -294,6 +289,11 @@ function changeThemeInfo($file_name, $theme_name) {
       $hostname = $form_state->getValue('hostname');
       try {
         $this->createIngress($hostname);
+        $path = 'private://iq_multidomain_extensions.domains';
+        $file = file_get_contents($path);
+        if (strpos($file, $hostname) === FALSE) {
+          file_put_contents($path, $hostname . PHP_EOL, FILE_APPEND);
+        }
       }
       catch (Exception $e) {
         $this->messenger->addMessage('Could not find or create ingress.');
