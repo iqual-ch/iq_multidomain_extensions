@@ -1,21 +1,22 @@
 {
   "name": "iqual/iq_multidomain_extensions",
   "description": "Support for multidomain.",
-  "type": "drupal-module",
+  "type": "drupal-custom-module",
   "homepage": "https://github.com/iqual-ch/iq_multidomain_extensions",
   "license": "GPL-2.0+",
   "require": {
     "drupal/core": ">=8.6",
     "drupal/domain": "*",
     "drupal/domain_site_settings": "*",
-    "drupal/domain_theme_switch": "*",
+    "iqual/styling_profiles": "*",
     "iqual/rancher-api": "*"
   },
   "extra": {
     "enable-patching": true,
     "patches": {
       "drupal/domain_site_settings": {
-        "Issue 2930391 - Circular Error or Conflict with Language_Manager": "https://www.drupal.org/files/issues/2018-10-09/2930391-21.patch"
+        "Issue 2930391 - Circular Error or Conflict with Language_Manager": "https://www.drupal.org/files/issues/2018-10-09/2930391-21.patch",
+        "Issue 3126737 - Use entity type manager to solve 'You have requested a non-existent service 'domain.loader'.'": "https://www.drupal.org/files/issues/2020-06-20/3126737-8.patch"
       }
     }
   }
