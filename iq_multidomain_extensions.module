@@ -5,14 +5,7 @@
  */
 
 use Symfony\Component\Yaml\Yaml;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Render\BubbleableMetadata;
-use Drupal\Core\Entity\EntityStorageException;
-use Drupal\Core\Extension\Exception\UnknownExtensionException;
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\system\Entity\Menu;
-use Drupal\Core\Form\FormState;
-use Tyldar\Rancher\Rancher;
 
 /**
  *
@@ -41,10 +34,12 @@ function iq_multidomain_extensions_entity_type_alter(&$entity_types) {
  * Implements hook_token_info().
  */
 function iq_multidomain_extensions_token_info() {
-  $info = [];
-  $info['types']['iq_domain'] = ['name' => t('iqual Domain Extensions'), 'description' => t('iqual Domain Extensions')];
-  $info['tokens']['iq_domain']['url_prefix'][] = 'iqual Domain URL prefix';
-  return $info;
+  $type = ['name' => t('iqual domain extension'), 'description' => t('iqual domain extension tokens')];
+  $tokens['url_prefix'] = ['name' => t("Domain URL prefix"), 'description' => t("Get the domain prefix.")];
+  return [
+    'types' => ['iq_domain' => $type],
+    'tokens' => ['iq_domain' => $tokens],
+  ];
 }
 
 /**
@@ -102,7 +97,7 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
   }
 
   $variables['pattern'] = [];
-  if ($view->preview && !isset($view->element['#embed'])) {
+  if (\Drupal::service('router.admin_context')->isAdminRoute() && $view->preview && !isset($view->element['#embed'])) {
     drupal_set_message(t("Pattern Views row plugin does not support preview."), 'warning');
     $variables['pattern'] = ['#type' => 'status_messages'];
   }
@@ -132,245 +127,6 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
 }
 
 /**
- * Implements hook_form_BASE_ID_alter().
- */
-function iq_multidomain_extensions_form_domain_edit_form_alter(&$form, FormState $form_state, $form_id) {
-  $user = \Drupal::currentUser();
-  if (!$user->hasPermission('add iq_multidomain_extensions domains')) {
-    // $form['id']['#type'] = 'hidden';
-    $form['scheme']['#type'] = 'hidden';
-    $form['status']['#type'] = 'hidden';
-    $form['is_default']['#type'] = 'hidden';
-    $form['validate_url']['#type'] = 'hidden';
-    $form['weight']['#type'] = 'hidden';
-    $form['scheme']['#default_value'] = 'https';
-    $form['status']['#default_value'] = 1;
-    $form['is_default']['#default_value'] = FALSE;
-    $form['validate_url']['#default_value'] = FALSE;
-  }
-  $form['actions']['submit']['#submit'][] = 'iq_multidomain_extensions_domain_edit_form_submit';
-}
-
-/**
- * Submit handler function for the domain form to create a theme copy.
- */
-function iq_multidomain_extensions_domain_edit_form_submit(&$form, FormStateInterface $form_state) {
-  $new_value = strtolower($form['name']['#value']);
-  $new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
-  $domain_name = str_replace("_", "-", $new_name);
-  $messenger = \Drupal::messenger();
-  /** Rancher integration */
-  $httpClient = \Drupal::httpClient();
-
-  $rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
-  $url = $rancher_settings->get('rancher_endpoint');
-  $theme_directory = $rancher_settings->get('directory_path');
-  $RANCHER_TOKEN = getenv("RANCHER_API_TOKEN");
-
-  if (strrpos($RANCHER_TOKEN, ":") > 0) {
-    $username = explode(":", $RANCHER_TOKEN)[0];
-    $password = explode(":", $RANCHER_TOKEN)[1];
-  }
-  else {
-    \Drupal::messenger()->addMessage('Rancher token is missing from the environment variables. Cannot create a new domain', 'error');
-    return;
-  }
-
-  $old_name = $rancher_settings->get('base_theme');
-
-  // $namespace = file_get_contents('/var/run/secrets/kubernetes.io/serviceaccount/namespace');
-  try {
-    $rancher = new Rancher($url, $username, $password);
-    $domain_namespace = NULL;
-    $domain_service = NULL;
-    $project_id = NULL;
-    if (getenv('RANCHER_PROJECT_ID') && getenv('RANCHER_SERVICE_ID')) {
-      $project_id = getenv('RANCHER_PROJECT_ID');
-      $domain_service = getenv('RANCHER_SERVICE_ID');
-      $domain_namespace = explode(':', getenv('RANCHER_SERVICE_ID'))[0];
-    }
-    else {
-      $projects = $rancher->projects()->getAll();
-      foreach ($projects as $project) {
-        $ingresses = $rancher->ingresses($project->id)->getAll();
-        foreach ($ingresses as $ingress) {
-          foreach ($ingress->publicEndpoints as $publicEndpoint) {
-            if ($publicEndpoint->hostname == $_SERVER['HTTP_HOST']) {
-              $domain_namespace = $ingress->namespaceId;
-              $domain_service = $publicEndpoint->serviceId;
-              $project_id = $project->id;
-              break;
-            }
-          }
-          if (isset($domain_namespace)) {
-            break;
-          }
-        }
-        if (isset($domain_namespace)) {
-          break;
-        }
-      }
-    }
-    /**
-     * Create the ingress.
-     */
-    $kube_friendly_name = str_replace(".", "-", $domain_name . '.' . getenv('DOMAIN_BASE'));
-    $ingresses = $rancher->ingresses($project_id)->getAll();
-    $ingress_exists = FALSE;
-    foreach ($ingresses as $ingress) {
-      $ingress_hostname = json_decode(json_encode($ingress->rules), TRUE)[0]['host'];
-      if ($ingress->name == $kube_friendly_name . '-ingress' && $ingress_hostname != $form['hostname']['#value']) {
-        // $rancher->ingresses($project_id)->remove($ingress->id);
-        // $rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name . "-autogen");
-        $ingress_exists = TRUE;
-        \Drupal::messenger()->addMessage('Ingress recreated on rancher.');
-        break;
-      }
-      elseif ($ingress->name == $kube_friendly_name . '-ingress' && $ingress_hostname == $form['hostname']['#value']) {
-        \Drupal::messenger()->addMessage('Ingress already existed.');
-        $ingress_exists = TRUE;
-        break;
-      }
-    }
-    if (!$ingress_exists) {
-      $new_ingress = $rancher->helpers()->createIngress($kube_friendly_name . '-ingress', $domain_namespace, $project_id, $form['hostname']['#value'], $domain_service, $domain_namespace . ":" . $kube_friendly_name . "-autogen");
-      \Drupal::messenger()->addMessage('New ingress created on rancher.');
-    }
-  }
-  catch (Exception $e) {
-    var_dump($e->getResponse());
-    die();
-    \Drupal::messenger()->addMessage('Something went wrong.');
-    \Drupal::messenger()->addMessage($e->getResponse()->getBody()->getContents());
-  }
-
-  /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
-  $themeHandler = \Drupal::service('theme_handler');
-  $themeHandler->refreshInfo();
-  if (!is_dir($theme_directory . '/' . $old_name)) {
-    \Drupal::messenger()->addMessage('Base theme ' . $theme_directory . '/' . $old_name . ' is missing. New theme cannot be created.', 'error');
-    return;
-  }
-  $new_name = 'multidomain_' . $new_name;
-  if (!is_dir($theme_directory . '/' . $new_name)) {
-    recurse_copy($theme_directory . '/' . $old_name, $theme_directory . '/' . $new_name, $old_name, $new_name);
-    $themeInfo = $form['name']['#value'];
-    $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
-    $config->set($form['id']['#value'] . '.site_name', $themeInfo);
-    $mail = \Drupal::configFactory()->get('system.site')->get('mail');
-    if (!isset($mail) || empty($mail)) {
-      $mail = 'info@docker.iqual.ch';
-    }
-    $config->set($form['id']['#value'] . '.site_mail', $mail);
-    $config->save();
-    change_theme_info($theme_directory . '/' . $new_name . '/' . $new_name . '.info.yml', $themeInfo);
-    // Add a menu.
-    $menu = Menu::load(str_replace('_', '-', $new_name));
-    if ($menu == NULL) {
-      $menu = Menu::create([
-        'id' => str_replace('_', '-', $new_name),
-        'label' => $form['name']['#value'] . ' - Main navigation',
-        'description' => 'Main navigation menu for ' . $form['name']['#value'],
-      ]);
-      $menu->save();
-    }
-    if (\Drupal::moduleHandler()->moduleExists('pagedesigner') && \Drupal::moduleHandler()->moduleExists('pagetree')) {
-      $pagetree_settings = \Drupal::configFactory()->getEditable('pagetree.settings');
-      $pagetree_settings->set('menus', array_merge($pagetree_settings->get('menus'), [$menu->id() => $menu->id()]));
-      $pagetree_settings->save();
-    }
-    // Sleep 2 seconds in order for theme to be fully moved.
-    sleep(2);
-    try {
-      $themeHandler->getTheme($new_name);
-    }
-    catch (UnknownExtensionException $exception) {
-      /** @var \Drupal\Core\Extension\ThemeInstaller $themeInstaller */
-      $themeInstaller = \Drupal::service('theme_installer');
-      try {
-        $themeInstaller->install([$new_name]);
-      }
-      catch (EntityStorageException $e) {
-        $messenger->addMessage(t('Theme is already stored.'), 'warning');
-      }
-      catch (UnknownExtensionException $e) {
-        $messenger->addMessage(t('There was a problem with installing the theme.'), 'error');
-      }
-    }
-    $config = \Drupal::service('config.factory')->getEditable('domain_theme_switch.settings');
-    $config->set($form['id']['#value'] . '_site', $new_name);
-    $config->save();
-    // Copy all the settings from the previous to the new theme.
-    $data = \Drupal::configFactory()->get('iq_custom.settings')->getRawData();
-    \Drupal::configFactory()->getEditable($new_name . '.settings')->setData($data)->save();
-
-    // Send an email to notify about setting up the new domain.
-    $mailManager = \Drupal::service('plugin.manager.mail');
-    $user = \Drupal::currentUser();
-    $module = 'iq_multidomain_extensions';
-    $key = 'create_domain';
-    $to = $user->getEmail();
-    $params['message'] = 'A new domain has been created with a hostname ' . $form['hostname']['#value'] . ' for the ' . $form['name']['#value'] . ' site.';
-    $params['domain_title'] = $form['name']['#value'];
-    $send = TRUE;
-
-    if (isset($to) && !empty($to)) {
-      $result = $mailManager->mail($module, $key, $to, 'en', $params, NULL, $send);
-      if ($result['result'] !== TRUE) {
-        $messenger->addMessage(t('There was a problem sending your message and it was not sent.'), 'error');
-      }
-      else {
-        $messenger->addMessage(t('An email has been sent for the newly created domain.'));
-      }
-    }
-  }
-  else {
-    $messenger->addMessage(t('A directory with the name: ' . $new_name . ' already exists.'));
-  }
-}
-
-/**
- * Implements hook_entity_predelete().
- */
-function iq_multidomain_extensions_entity_predelete(EntityInterface $entity) {
-  if ($entity->bundle() == 'domain') {
-    /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
-    $themeHandler = \Drupal::service('theme_handler');
-    $new_value = strtolower($entity->get('name'));
-    $new_name = preg_replace('/[^a-z0-9_]+/', '_', $new_value);
-    $new_name = 'multidomain_' . $new_name;
-    try {
-      $themeHandler->getTheme($new_name);
-      $themeHandler->uninstall([$new_name]);
-    }
-    catch (\Exception $e) {
-
-    }
-    // Remove menu item and remove it from the pagetree configuration accordingly.
-    $menu_item = Menu::load(str_replace('_', '-', $new_name));
-    if ($menu_item) {
-      $menu_item->delete();
-    }
-    if (\Drupal::moduleHandler()->moduleExists('pagedesigner') && \Drupal::moduleHandler()->moduleExists('pagetree')) {
-      $pagetree_settings = \Drupal::configFactory()->getEditable('pagetree.settings');
-      $pagetree_settings_value = $pagetree_settings->get('menus');
-      unset($pagetree_settings_value[str_replace('_', '-', $new_name)]);
-      $pagetree_settings->set('menus', $pagetree_settings_value);
-      $pagetree_settings->save();
-    }
-    $rancher_settings = \Drupal::config('iq_multidomain_extensions.rancher_settings');
-    // Remove the theme directory.
-    $theme_directory = $rancher_settings->get('directory_path');
-    if (file_unmanaged_delete_recursive($theme_directory . '/' . $new_name)) {
-      \Drupal::messenger()->addMessage('Successfully removed theme for the domain.');
-    }
-    else {
-      \Drupal::messenger()->addMessage('Theme was not removed from the directory.', 'warning');
-    }
-  }
-}
-
-/**
  * Implements hook_mail().
  */
 function iq_multidomain_extensions_mail($key, &$message, $params) {
@@ -379,7 +135,7 @@ function iq_multidomain_extensions_mail($key, &$message, $params) {
     'langcode' => $message['langcode'],
   ];
   switch ($key) {
-    case 'create_domain':
+    case 'q_multidomain_extensions_create_domain':
       $message['from'] = \Drupal::config('system.site')->get('mail');
       $message['subject'] = t('Domain created: @title', ['@title' => $params['domain_title']], $options);
       $message['body'][] = $params['message'];
@@ -388,57 +144,8 @@ function iq_multidomain_extensions_mail($key, &$message, $params) {
 }
 
 /**
- * Function to copy a theme folder.
  *
- * @param $src
- *   The source of the theme.
- * @param $dst
- *   The destination of the theme copy.
- * @param $old_name
- *   Old name of the theme.
- * @param $new_name
- *   New name for the theme copy.
  */
-function recurse_copy($src, $dst, $old_name, $new_name) {
-  $dir = opendir($src);
-  mkdir($dst);
-  while (FALSE !== ($file = readdir($dir))) {
-    if (($file != '.') && ($file != '..')) {
-      if (is_dir($src . '/' . $file)) {
-        recurse_copy($src . '/' . $file, $dst . '/' . $file, $old_name, $new_name);
-      }
-      else {
-        $file_contents = file_get_contents($src . '/' . $file);
-        $file_contents = str_replace($old_name, $new_name, $file_contents);
-        if (strpos($file, $old_name) != -1) {
-          $file = str_replace($old_name, $new_name, $file);
-        }
-        file_put_contents($dst . '/' . $file, $file_contents);
-      }
-    }
-  }
-  closedir($dir);
-}
-
-/**
- * Renames the theme name of the new theme copy for proper functionality.
- *
- * @param $file_name
- *   The file name in which the theme will be renamed.
- * @param $theme_name
- *   The new theme name.
- */
-function change_theme_info($file_name, $theme_name) {
-  $theme_info = Yaml::parse(file_get_contents($file_name));
-  $theme_info['name'] = $theme_name . ' (Multidomain)';
-  $theme_info['description'] = $theme_name . ' theme, created from multidomain module.';
-  $yaml = Yaml::dump($theme_info);
-  // $file_contents = file_get_contents($file_name);
-  // $file_contents = preg_replace('/name: [a-z0-9].*/', 'name: ' . $theme_name, $file_contents);
-  // $file_contents = preg_replace('/description: \'[a-z0-9].*\'/', 'description: ' . $theme_name . ' theme', $file_contents);
-  @file_put_contents($file_name, $yaml);
-}
-
 function iq_multidomain_extensions_views_plugins_row_alter(array &$plugins) {
 
   // Change the used class of a plugin.
