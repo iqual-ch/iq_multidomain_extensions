@@ -289,11 +289,6 @@ class DomainService {
       $hostname = $form_state->getValue('hostname');
       try {
         $this->createIngress($hostname);
-        $path = 'private://iq_multidomain_extensions.domains';
-        $file = file_get_contents($path);
-        if (strpos($file, $hostname) === FALSE) {
-          file_put_contents($path, $hostname . PHP_EOL, FILE_APPEND);
-        }
       }
       catch (Exception $e) {
         $this->messenger->addMessage('Could not find or create ingress.');
