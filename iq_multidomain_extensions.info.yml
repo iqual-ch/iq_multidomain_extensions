@@ -8,4 +8,3 @@ dependencies:
   - domain:domain
   - domain:domain_source
   - domain_site_settings:domain_site_settings
-  - styling_profiles:styling_profiles_domain_switch
