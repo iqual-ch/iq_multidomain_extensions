@@ -97,11 +97,7 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
   }
 
   $variables['pattern'] = [];
-  if (\Drupal::service('router.admin_context')->isAdminRoute() && $view->preview && !isset($view->element['#embed'])) {
-    drupal_set_message(t("Pattern Views row plugin does not support preview."), 'warning');
-    $variables['pattern'] = ['#type' => 'status_messages'];
-  }
-  elseif (!empty($fields)) {
+  if (empty($view->live_preview) && !empty($fields)) {
     if ($pattern_prefix && in_array($pattern_prefix . $options['pattern'], $pattern_ids)) {
       $pattern_id = $pattern_prefix . $options['pattern'];
     }
