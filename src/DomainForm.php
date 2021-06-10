@@ -64,14 +64,14 @@ class DomainForm extends OrigForm {
           '#disabled' => !$domainThemeSwitch,
         ];
       }
-      if ($stylingProfileThemeSwitch) {
-        $form['extensions']['create_styling_profile'] = [
-          '#type' => 'checkbox',
-          '#title' => $this->t('Create styling profile'),
-          '#description' => $this->t('Whether to automatically create a styling profile with each new domain.'),
-          '#default_value' => $baseConfig->get('create_styling_profile'),
-        ];
-      }
+      $form['extensions']['create_styling_profile'] = [
+        '#type' => 'checkbox',
+        '#title' => $this->t('Create styling profile'),
+        '#description' => $this->t('Whether to automatically create a styling profile with each new domain.')   . ((!$stylingProfileThemeSwitch) ? '<br />' . $this->t('Only available if styling_profiles_domain_switch is installed.') : ''),
+        '#default_value' => $baseConfig->get('create_styling_profile'),
+        '#disabled' => !$stylingProfileThemeSwitch,
+      ];
+
       $form['#isnew'] = TRUE;
       $form['hostname']['#field_suffix'] = '.' . getenv('DOMAIN_BASE');
       $form['hostname']['#default_value'] = str_replace('.' . getenv('DOMAIN_BASE'), '', $form['hostname']['#default_value']);
