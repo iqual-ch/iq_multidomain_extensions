@@ -274,9 +274,12 @@ class DomainService {
   public function createStylingProfile(string $label, string $id) {
     $profile = StylingProfile::create(['id' => $id, 'label' => $label]);
     $profile->save();
-    $config = \Drupal::service('config.factory')->getEditable('styling_profiles_domain_switch.settings');
-    $config->set($id, $profile->id());
-    $config->save();
+    $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
+    if ($stylingProfileThemeSwitch) {
+      $config = \Drupal::service('config.factory')->getEditable('styling_profiles_domain_switch.settings');
+      $config->set($id, $profile->id());
+      $config->save(); 
+    }
   }
 
   /**
