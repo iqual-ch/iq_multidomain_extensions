@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Contains install & update hooks.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function iq_multidomain_sitemap_extension_install() {
+  module_set_weight('iq_multidomain_sitemap_extension', 998);
+}
