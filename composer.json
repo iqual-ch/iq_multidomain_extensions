@@ -8,6 +8,7 @@
     "drupal/core": ">=8.6",
     "drupal/domain": "*",
     "drupal/domain_site_settings": "*",
+    "drupal/xmlsitemap": "*",
     "iqual/rancher-api": "*"
   },
   "extra": {

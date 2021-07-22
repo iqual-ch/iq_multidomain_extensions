@@ -1,0 +1,9 @@
+name: iqual Multidomain Sitemap Extension
+description: Extension to create Sitemaps per Domain
+package: Domain
+
+type: module
+core: 8.x
+dependencies:
+  - iq_multidomain_extensions:iq_multidomain_extensions
+  - xmlsitemap:xmlsitemap

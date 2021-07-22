@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * @file
+ * Contains iq_multidomain_sitemap_extension.module.
+ *
+ * The hooks are used to add a new context domain_record to the sitemaps.
+ * The sitemaps elements are then shown/hidden if their domain source matches
+ * the sitemap's domain_record.
+ */
+
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_xmlsitemap_context_info().
+ */
+function iq_multidomain_sitemap_extension_xmlsitemap_context_info() {
+  $context['domain_record'] = [
+    'label' => t('Domain'),
+    'default' => 0,
+  ];
+  return $context;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function iq_multidomain_sitemap_extension_form_xmlsitemap_sitemap_edit_form_alter(&$form, $form_state) {
+
+  $options = [];
+  $defaultDomainId = '';
+  foreach (\Drupal::service('entity_type.manager')->getStorage('domain')->loadByProperties() as $domainRecord) {
+    if ($domainRecord->get('is_default')) {
+      $defaultDomainId = $domainRecord->id();
+    }
+    $options[$domainRecord->id()] = $domainRecord->get('name');
+  }
+
+  $form['context']['domain_record'] = [
+    '#type' => 'select',
+    '#title' => t('Domain'),
+    '#options' => $options,
+    '#default_value' => isset($form['#entity']->context['domain_record']) ? $form['#entity']->context['domain_record'] : $defaultDomainId,
+  ];
+}
+
+/**
+ * Implements hook_xmlsitemap_element_alter().
+ */
+function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$element, $link, $sitemap) {
+
+  if (!$sitemap->context['domain_record']) {
+    return;
+  }
+
+  $domain = \Drupal::service('entity_type.manager')->getStorage('domain')->load($sitemap->context['domain_record']);
+  if (!$domain) {
+    return;
+  }
+
+  if ($link['type'] == 'frontpage') {
+    $domainConfig = \Drupal::config('domain_site_settings.domainconfigsettings')->get($domain->id());
+    $params = Url::fromUri("internal:" . $domainConfig['site_frontpage'])->getRouteParameters();
+    $element['loc'] = $domain->get('scheme') . '://' . $domain->get('hostname');
+  }
+  else {
+    $params = Url::fromUri("internal:" . $link['loc'])->getRouteParameters();
+  }
+
+  $entity_type = key($params);
+  $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->load($params[$entity_type]);
+
+  // Replace base URL with domain's host.
+  $baseUrl = $sitemap->get('uri')['options']['base_url'];
+  $domainHost = $domain->get('scheme') . '://' . $domain->get('hostname');
+  $element['loc'] = str_replace($baseUrl, $domainHost, $element['loc']);
+
+  // Remove element if link's domain doesn't match the XML's domain.
+  if (domain_source_get($entity) && domain_source_get($entity) !== $sitemap->context['domain_record']) {
+    $element = [];
+  }
+}
