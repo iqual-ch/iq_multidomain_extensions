@@ -12,6 +12,17 @@
 use Drupal\Core\Url;
 
 /**
+ * Implements hook_xmlsitemap_context().
+ */
+function iq_multidomain_sitemap_extension_xmlsitemap_context() {
+  $context = [];
+  if ($domainId = \Drupal::service('domain.negotiator')->getActiveId()) {
+    $context['domain_record'] = $domainId;
+  }
+  return $context;
+}
+
+/**
  * Implements hook_xmlsitemap_context_info().
  */
 function iq_multidomain_sitemap_extension_xmlsitemap_context_info() {
