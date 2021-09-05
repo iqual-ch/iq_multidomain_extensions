@@ -1,0 +1,9 @@
+name: iqual Multidomain robots.txt Extension
+description: Extension to add robots.txt per Domain
+package: Domain
+
+type: module
+core: 8.x
+dependencies:
+  - iq_multidomain_extensions:iq_multidomain_extensions
+  - iq_multidomain_extensions:iq_multidomain_favicon_extension

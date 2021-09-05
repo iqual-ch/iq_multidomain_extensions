@@ -1,0 +1,17 @@
+domain_site_settings.config_form:
+  path: '/admin/config/domain/domain_site_settings/{domain_id}/edit'
+  defaults:
+    _form: '\Drupal\iq_multidomain_robotstxt_extension\Form\DomainConfigSettingsFormRobotstxtExtension'
+    _title: 'Domain site settings'
+  requirements:
+    _permission: 'domain site settings'
+  options:
+    _admin_route: TRUE
+
+iq_multidomain_robotstxt_extension.routing.robots.content:
+  path: '/robots'
+  defaults:
+    _controller: '\Drupal\iq_multidomain_robotstxt_extension\Controller\RobotsTxtController::content'
+    _disable_route_normalizer: 'TRUE'
+  requirements:
+    _access: 'TRUE'
