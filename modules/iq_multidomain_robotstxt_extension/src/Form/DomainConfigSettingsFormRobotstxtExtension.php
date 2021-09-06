@@ -4,7 +4,6 @@ namespace Drupal\iq_multidomain_robotstxt_extension\Form;
 
 use Drupal\iq_multidomain_favicon_extension\Form\DomainConfigSettingsFormFaviconExtension;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Cache\Cache;
 
 /**
  * Class DomainConfigSettingsForm.
@@ -43,7 +42,6 @@ class DomainConfigSettingsFormRobotstxtExtension extends DomainConfigSettingsFor
     $domainId = $form_state->getValue('domain_id');
     $config = $this->config('domain_site_settings.domainconfigsettings');
     $config->set($domainId . '.domain_robotstxt', $robotstxt);
-    Cache::invalidateTags(['robotstxt']);
     $config->save();
   }
 

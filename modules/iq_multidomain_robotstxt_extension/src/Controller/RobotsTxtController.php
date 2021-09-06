@@ -8,7 +8,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
-use Drupal\Core\Cache\CacheableResponse;
+
 
 /**
  * Provides output robots.txt output.
@@ -50,14 +50,11 @@ class RobotsTxtController extends ControllerBase implements ContainerInjectionIn
   public function content() {
     $content = file_get_contents(\Drupal::root() . '/robots.txt');
     $domainId = \Drupal::service('domain.negotiator')->getActiveId();
-    if ($this->config->get($domainId . '.domain_robotstxt') && count($this->config->get($domainId . '.domain_robotstxt'))) {
+    if ($this->config->get($domainId . '.domain_robotstxt') && !empty($this->config->get($domainId . '.domain_robotstxt'))) {
       $content = $this->config->get($domainId . '.domain_robotstxt');
     }
 
-    $response = new CacheableResponse($content, Response::HTTP_OK, ['content-type' => 'text/plain']);
-    $meta_data = $response->getCacheableMetadata();
-    $meta_data->addCacheTags(['robotstxt']);
-    return $response;
+    return new Response($content, 200, ['Content-Type' => 'text/plain']);
   }
 
 }
