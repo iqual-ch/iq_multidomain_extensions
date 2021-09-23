@@ -10,12 +10,5 @@
     "drupal/domain_site_settings": "*",
     "iqual/rancher-api": "*"
   },
-  "extra": {
-    "enable-patching": true,
-    "patches": {
-      "drupal/domain_site_settings": {
-        "Issue 3126737 - Use entity type manager to solve 'You have requested a non-existent service 'domain.loader'.'": "https://www.drupal.org/files/issues/2020-06-20/3126737-8.patch"
-      }
-    }
-  }
+  "extra": {}
 }
