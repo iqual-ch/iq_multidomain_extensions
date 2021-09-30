@@ -34,9 +34,21 @@ Install the iq_multidomain_sitemap_extension submodule:
 Go to /admin/config/search/xmlsitemap to add sitemaps. On each sitemap, there's a new field available to set the domain.
 
 ### Favicon
-If you're not working with a mutli-theme setup (one them per domain), the iq_multidomain_favicon_extension submodule is needed. Install it with
+If you're not working with a mutli-theme setup (one of them per domain), the iq_multidomain_favicon_extension submodule is needed. Install it with
 
     drush en iq_multidomain_favicon_extension
 
 Once installed, a new field is available on the domain site settings for the favicon.
 /admin/config/domain/domain_site_settings/{domain_id}/edit
+
+### Robots.txt
+If you want to register a robots.txt file per domain, you must activate iq_multidomain_robotstxt_extension. Install it with
+
+    drush en iq_multidomain_robotstxt_extension
+
+Once installed, a new field is available on the domain site settings for the robots.txt content.
+/admin/config/domain/domain_site_settings/{domain_id}/edit
+
+You also need to add the following annotation to all main domain ingresses on rancher:
+nginx.ingress.kubernetes.io/configuration-snippet=location = /robots.txt {  rewrite ^ /robots last; }
+This redirects requests to robot.txt to the correct dynamic endpoint.
