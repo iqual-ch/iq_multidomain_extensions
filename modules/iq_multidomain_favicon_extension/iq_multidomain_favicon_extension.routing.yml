@@ -1,0 +1,9 @@
+domain_site_settings.config_form:
+  path: '/admin/config/domain/domain_site_settings/{domain_id}/edit'
+  defaults:
+    _form: '\Drupal\iq_multidomain_favicon_extension\Form\DomainConfigSettingsFormFaviconExtension'
+    _title: 'Domain site settings'
+  requirements:
+    _permission: 'domain site settings'
+  options:
+    _admin_route: TRUE
