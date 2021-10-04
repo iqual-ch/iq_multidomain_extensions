@@ -28,7 +28,7 @@ class DomainForm extends OrigForm {
     ];
     $form['extensions']['url_prefix'] = [
       '#type' => 'textfield',
-      '#required' => TRUE,
+      '#required' => (!$form_state->getFormObject()->getEntity()->isDefault()) ? TRUE : FALSE,
       '#title' => $this->t('URL prefix'),
       '#description' => $this->t('The url prefix for aliases for this domain.'),
       '#default_value' => $this->entity->getThirdPartySetting('iq_multidomain_extensions', 'url_prefix'),
