@@ -84,9 +84,9 @@ class DomainService {
    *
    */
   protected function getMetaInfo($currentHost) {
-    $projects = $this->rancher->projects()->getAll();
+    $projects = $this->client->projects()->getAll();
     foreach ($projects as $project) {
-      $ingresses = $this->rancher->ingresses($project->id)->getAll();
+      $ingresses = $this->client->ingresses($project->id)->getAll();
       foreach ($ingresses as $ingress) {
         if (isset($this->domainNamespace)) {
           break;
@@ -140,6 +140,10 @@ class DomainService {
    *
    */
   public function createIngress(string $hostname) {
+    if ($this->client == NULL) {
+      $this->messenger->addMessage('Rancher connection is missing, cancelling ingress creation.', 'warn');
+      return;
+    }
     if (empty($this->domainService) || empty($this->projectId)) {
       $this->getMetaInfo($_SERVER['HTTP_HOST']);
     }
@@ -161,7 +165,7 @@ class DomainService {
       $this->messenger->addMessage('New ingress created on rancher.');
     }
     else {
-      // TODO: Check whether we want to remove ingresses automatically
+      // @todo Check whether we want to remove ingresses automatically
       // $this->client->ingresses($project_id)->remove($ingress->id);
       // $ingress = $this->client->helpers()->createIngress($ingressName, $this->domainNamespace, $this->projectId, $hostname, $this->domainService, $this->domainNamespace . ":" . $ingressName . "-autogen");.
     }
@@ -274,12 +278,9 @@ class DomainService {
   public function createStylingProfile(string $label, string $id) {
     $profile = StylingProfile::create(['id' => $id, 'label' => $label]);
     $profile->save();
-    $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
-    if ($stylingProfileThemeSwitch) {
-      $config = \Drupal::service('config.factory')->getEditable('styling_profiles_domain_switch.settings');
-      $config->set($id, $profile->id());
-      $config->save(); 
-    }
+    $config = \Drupal::service('config.factory')->getEditable('styling_profiles_domain_switch.settings');
+    $config->set($id, $profile->id());
+    $config->save();
   }
 
   /**
@@ -299,7 +300,7 @@ class DomainService {
       }
 
       if ($form_state->getValue('create_menu')) {
-        $this->addMenu($label, 'multidomain_' . $id, $form_state->getValue('menu_content_types'));
+        $this->addMenu($label, 'multidomain-' . str_replace('_', '-', $id), $form_state->getValue('menu_content_types'));
       }
 
       $moduleHandler = \Drupal::service('module_handler');
