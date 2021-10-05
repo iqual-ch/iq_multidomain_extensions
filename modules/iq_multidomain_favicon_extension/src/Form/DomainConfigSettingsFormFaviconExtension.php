@@ -2,13 +2,8 @@
 
 namespace Drupal\iq_multidomain_favicon_extension\Form;
 
-use Drupal\Core\Form\ConfigFormBase;
+use Drupal\domain\DomainInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Path\AliasManagerInterface;
-use Drupal\Core\Path\PathValidatorInterface;
-use Drupal\Core\Routing\RequestContext;
 use Drupal\domain_site_settings\Form\DomainConfigSettingsForm;
 use Drupal\file\Entity\File;
 
@@ -22,7 +17,7 @@ class DomainConfigSettingsFormFaviconExtension extends DomainConfigSettingsForm 
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state, DomainInterface $domain = NULL) {
 
     $config = $this->config('domain_site_settings.domainconfigsettings');
     $domainId = $this->getRequest()->get('domain_id');

@@ -7,7 +7,7 @@
   "require": {
     "drupal/core": ">=8.6",
     "drupal/domain": "*",
-    "drupal/domain_site_settings": "*",
+    "drupal/domain_site_settings": "^1.4",
     "drupal/xmlsitemap": "*",
     "iqual/rancher-api": "*"
   },
