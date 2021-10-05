@@ -2,6 +2,7 @@
 
 namespace Drupal\iq_multidomain_robotstxt_extension\Form;
 
+use Drupal\domain\DomainInterface;
 use Drupal\iq_multidomain_favicon_extension\Form\DomainConfigSettingsFormFaviconExtension;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -15,7 +16,7 @@ class DomainConfigSettingsFormRobotstxtExtension extends DomainConfigSettingsFor
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state, DomainInterface $domain = NULL) {
 
     $config = $this->config('domain_site_settings.domainconfigsettings');
     $domainId = $this->getRequest()->get('domain_id');
