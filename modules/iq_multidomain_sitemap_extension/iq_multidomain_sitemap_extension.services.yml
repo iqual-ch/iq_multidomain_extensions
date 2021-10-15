@@ -1,6 +1,6 @@
 services:
   xmlsitemap_generator:
     class: Drupal\iq_multidomain_sitemap_extension\MultidomainExtensionXmlSitemapGenerator
-    arguments: ['@config.factory', '@state', '@language_manager', '@logger.channel.xmlsitemap', '@module_handler', '@entity_type.manager', '@database', '@messenger', '@file_system', '@datetime.time']
+    arguments: ['@config.factory', '@state', '@language_manager', '@logger.channel.xmlsitemap', '@module_handler', '@entity_type.manager', '@database', '@messenger', '@file_system', '@datetime.time', '@entity.memory_cache']
     tags:
       - { name: xmlsitemap_generator }
