@@ -22,7 +22,11 @@ class DomainConfigSettingsFormFaviconExtension extends DomainConfigSettingsForm 
     $config = $this->config('domain_site_settings.domainconfigsettings');
     $domainId = $this->getRequest()->get('domain_id');
 
-    $form = parent::buildForm($form, $form_state);
+    if (!$domain) {
+      $domain = \Drupal::service('entity_type.manager')->getStorage('domain')->load($domainId);
+    }
+
+    $form = parent::buildForm($form, $form_state, $domain);
 
     $form['site_information']['domain_favicon'] = [
       '#type' => 'managed_file',
