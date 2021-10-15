@@ -19,11 +19,7 @@ class DomainConfigSettingsFormRobotstxtExtension extends DomainConfigSettingsFor
   public function buildForm(array $form, FormStateInterface $form_state, DomainInterface $domain = NULL) {
 
     $config = $this->config('domain_site_settings.domainconfigsettings');
-    $domainId = $this->getRequest()->get('domain_id');
-
-    if (!$domain) {
-      $domain = \Drupal::service('entity_type.manager')->getStorage('domain')->load($domainId);
-    }
+    $domainId = $domain->id();
 
     $form = parent::buildForm($form, $form_state, $domain);
 
