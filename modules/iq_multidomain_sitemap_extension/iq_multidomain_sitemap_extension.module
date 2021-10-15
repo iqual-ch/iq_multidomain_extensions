@@ -69,6 +69,12 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
     return;
   }
 
+  // Remove /node/id URLs from sitemap
+  if (strpos($element['loc'], '/node/') !== FALSE) {
+    $element = [];
+    return;
+  }
+
   if ($link['type'] == 'frontpage') {
     $domainConfig = \Drupal::config('domain_site_settings.domainconfigsettings')->get($domain->id());
     $params = Url::fromUri("internal:" . $domainConfig['site_frontpage'])->getRouteParameters();
