@@ -64,9 +64,6 @@ class DomainConfigSettingsFormFaviconExtension extends DomainConfigSettingsForm 
       }
     }
 
-
-
-
     $domainId = $form_state->getValue('domain_id');
     $config = $this->config('domain_site_settings.domainconfigsettings');
     $config->set($domainId . '.domain_favicon', $favicon);
