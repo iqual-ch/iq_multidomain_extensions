@@ -44,21 +44,28 @@ class DomainConfigSettingsFormFaviconExtension extends DomainConfigSettingsForm 
     parent::submitForm($form, $form_state);
 
     $favicon = $form_state->getValue('domain_favicon');
-    $fileUsage = \Drupal::service('file.usage');
-    $faviconFile = File::load($favicon[0]);
+    if (array_key_exists(0, $favicon)) {
+      $fileUsage = \Drupal::service('file.usage');
+      $faviconFile = File::load($favicon[0]);
 
-    // Set file status permanent.
-    if (!$faviconFile->isPermanent()) {
-      $faviconFile->setPermanent();
+      if ($faviconFile) {
+        // Set file status permanent.
+        if (!$faviconFile->isPermanent()) {
+          $faviconFile->setPermanent();
+        }
+
+        // Check file usage , if it's empty, add new entry.
+        $usage = $fileUsage->listUsage($faviconFile);
+        if (empty($usage)) {
+          // Let's assume it's image.
+          $fileUsage->add($faviconFile, 'iq_multidomain_favicon_extension', 'image', $favicon[0]);
+        }
+        $faviconFile->save();
+      }
     }
 
-    // Check file usage , if it's empty, add new entry.
-    $usage = $fileUsage->listUsage($faviconFile);
-    if (empty($usage)) {
-      // Let's assume it's image.
-      $fileUsage->add($faviconFile, 'iq_multidomain_favicon_extension', 'image', $favicon[0]);
-    }
-    $faviconFile->save();
+
+
 
     $domainId = $form_state->getValue('domain_id');
     $config = $this->config('domain_site_settings.domainconfigsettings');
