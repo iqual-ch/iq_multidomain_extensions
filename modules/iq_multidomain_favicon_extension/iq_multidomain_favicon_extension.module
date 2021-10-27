@@ -19,11 +19,12 @@ function iq_multidomain_sitemap_extension_page_attachments_alter(array &$attachm
   if ($config->get($domainId . '.domain_favicon') && count($config->get($domainId . '.domain_favicon'))) {
 
     $file = File::load($config->get($domainId . '.domain_favicon')[0]);
-    $faviconUrl = file_create_url($file->getFileUri());
-
-    foreach ($attachments['#attached']['html_head_link'] as $index => $headLinkElement) {
-      if ($headLinkElement[0]['rel'] === 'shortcut icon') {
-        $attachments['#attached']['html_head_link'][$index][0]['href'] = $faviconUrl;
+    if ($file) {
+      $faviconUrl = file_create_url($file->getFileUri());
+      foreach ($attachments['#attached']['html_head_link'] as $index => $headLinkElement) {
+        if ($headLinkElement[0]['rel'] === 'shortcut icon') {
+          $attachments['#attached']['html_head_link'][$index][0]['href'] = $faviconUrl;
+        }
       }
     }
   }
