@@ -121,7 +121,7 @@ class DomainService {
       $menu->save();
     }
     foreach ($contentTypes as $contentTypeId => $label) {
-      $contentType = \Drupal::service('entity.manager')->getStorage('node_type')->load($contentTypeId);
+      $contentType = \Drupal::service('entity_type.manager')->getStorage('node_type')->load($contentTypeId);
       $menus = $contentType->getThirdPartySetting('menu_ui', 'available_menus');
       if (!in_array($id, $menus)) {
         $menus[] = $id;
