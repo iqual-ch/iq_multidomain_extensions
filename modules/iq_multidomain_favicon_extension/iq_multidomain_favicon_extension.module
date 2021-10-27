@@ -15,7 +15,7 @@ use Drupal\file\Entity\File;
 function iq_multidomain_sitemap_extension_page_attachments_alter(array &$attachments) {
 
   $domainId = \Drupal::service('domain.negotiator')->getActiveId();
-  $config = \Drupal::config('domain_site_settings.domainconfigsettings');
+  $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
   if ($config->get($domainId . '.domain_favicon') && count($config->get($domainId . '.domain_favicon'))) {
 
     $file = File::load($config->get($domainId . '.domain_favicon')[0]);
