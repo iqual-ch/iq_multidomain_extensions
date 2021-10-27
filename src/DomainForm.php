@@ -42,7 +42,7 @@ class DomainForm extends OrigForm {
         '#description' => $this->t('Whether to automatically create a menu for the new domain.'),
         '#default_value' => $baseConfig->get('create_menu'),
       ];
-      $contentTypes = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
+      $contentTypes = \Drupal::service('entity_type.manager')->getStorage('node_type')->loadMultiple();
       $contentTypesList = [];
       foreach ($contentTypes as $contentType) {
         $contentTypesList[$contentType->id()] = $contentType->label();

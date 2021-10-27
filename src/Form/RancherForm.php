@@ -61,7 +61,7 @@ class RancherForm extends ConfigFormBase {
       '#description' => $this->t('Whether to automatically create a menu for a new domain entry.'),
       '#default_value' => !empty($config->get('create_menu')) ? $config->get('create_menu') : 0,
     ];
-    $contentTypes = \Drupal::service('entity.manager')->getStorage('node_type')->loadMultiple();
+    $contentTypes = \Drupal::service('entity_type.manager')->getStorage('node_type')->loadMultiple();
     $contentTypesList = [];
     foreach ($contentTypes as $contentType) {
       $contentTypesList[$contentType->id()] = $contentType->label();
