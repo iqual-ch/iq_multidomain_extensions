@@ -20,9 +20,9 @@ function iq_multidomain_sitemap_extension_page_attachments_alter(array &$attachm
 
     $file = File::load($config->get($domainId . '.domain_favicon')[0]);
     if ($file) {
-      $faviconUrl = file_create_url($file->getFileUri());
+      $faviconUrl = $file->createFileUrl();
       foreach ($attachments['#attached']['html_head_link'] as $index => $headLinkElement) {
-        if ($headLinkElement[0]['rel'] === 'shortcut icon') {
+        if ($headLinkElement[0]['rel'] === 'icon') {
           $attachments['#attached']['html_head_link'][$index][0]['href'] = $faviconUrl;
         }
       }
