@@ -2,6 +2,7 @@
 
 namespace Drupal\iq_multidomain_extensions\Service;
 
+use Drupal\field\Entity\FieldConfig;
 use Drupal\Core\Messenger\MessengerInterface;
 use Tyldar\Rancher\Rancher;
 use Drupal\Core\Form\FormStateInterface;
@@ -333,6 +334,73 @@ class DomainService {
           }
         }
       }
+    }
+  }
+
+  /**
+   * Enable the source field on the given content types.
+   *
+   * @param array $bundles
+   *   The list of bundles to edit.
+   * @param bool $mandatory
+   *   Whether to make the field mandatory.
+   */
+  public function enableSources(array $bundles, bool $mandatory) {
+    foreach ($bundles as $bundle) {
+      $formDisplayName = 'node.' . $bundle . '.default';
+      $form_display = \Drupal::entityTypeManager()
+        ->getStorage('entity_form_display')
+        ->load($formDisplayName);
+      $form_display->setComponent('field_domain_source', ['type' => 'options_select']);
+      $form_display->save();
+      if ($mandatory) {
+        $config = FieldConfig::loadByName('node', $bundle, 'field_domain_source');
+        $config->setRequired(TRUE);
+        $config->save();
+      }
+    }
+  }
+
+  /**
+   * Disable the source field on the given content types.
+   *
+   * @param array $bundles
+   *   The list of bundles to edit.
+   */
+  public function disableSources(array $bundles) {
+    foreach ($bundles as $bundle) {
+      $formDisplayName = 'node.' . $bundle . '.default';
+      $form_display = \Drupal::entityTypeManager()
+        ->getStorage('entity_form_display')
+        ->load($formDisplayName);
+      $form_display->removeComponent('field_domain_source');
+      $form_display->save();
+    }
+  }
+
+  /**
+   * Update the source field to the default domain.
+   *
+   * The function directly edits the database and reloads the cache.
+   *
+   * @param array $nids
+   *   The list of node ids to edit.
+   */
+  public function setDefaultDomain() {
+    $domain = \Drupal::entityTypeManager()
+      ->getStorage('domain')
+      ->loadDefaultDomain();
+    $database = \Drupal::database();
+    $result = $database->query("SELECT type, 0, nid, vid, langcode, delta, :domainId FROM node_field_data WHERE nid IN :nids[]",
+    [
+      ':domainId' => $domain->id(),
+      ':nids[]' => $nids,
+    ]);
+
+    print_r($result);
+
+    foreach ($nids as $nid) {
+
     }
   }
 
