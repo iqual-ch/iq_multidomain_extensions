@@ -42,13 +42,36 @@ Once installed, a new field is available on the domain site settings for the fav
 /admin/config/domain/domain_site_settings/{domain}/edit
 
 ### Robots.txt
-If you want to register a robots.txt file per domain, you must activate iq_multidomain_robotstxt_extension. Install it with
+If you want to register a `robots.txt` file per domain, you must activate iq_multidomain_robotstxt_extension. Install it with
 
     drush en iq_multidomain_robotstxt_extension
 
 Once installed, a new field is available on the domain site settings for the robots.txt content.
 /admin/config/domain/domain_site_settings/{domain}/edit
 
+Additionally incoming public requests have to be passed to the module (i.e. PHP) on either the `/robots` or `/robots.txt` path.
+
+#### Kubernetes nginx ingress setup
+
 You also need to add the following annotation to all main domain ingresses on rancher:
-nginx.ingress.kubernetes.io/configuration-snippet=location = /robots.txt {  rewrite ^ /robots last; }
-This redirects requests to robot.txt to the correct dynamic endpoint.
+
+```yaml
+nginx.ingress.kubernetes.io/configuration-snippet: |-
+  location = /robots.txt {
+    rewrite ^ /robots last;
+  }
+```
+
+> It is also advised to enable the www-redirect option and to not set the `www` or non-`www` domain in the ingress respectively. (i.e. `nginx.ingress.kubernetes.io/from-to-www-redirect: "true"`)
+
+This rewrites incoming requests to `robots.txt` to the correct dynamic endpoint (`/robots`) bypassing any existing robots file.
+
+#### Nginx example
+
+If you want to pass the request to php directly in your application nginx, you can use an approach like this:
+
+```nginx
+location = /robots.txt {
+    rewrite ^ /index.php last;
+}
+```
