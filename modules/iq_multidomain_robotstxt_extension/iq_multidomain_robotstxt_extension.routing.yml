@@ -15,3 +15,11 @@ iq_multidomain_robotstxt_extension.routing.robots.content:
     _disable_route_normalizer: 'TRUE'
   requirements:
     _access: 'TRUE'
+
+iq_multidomain_robotstxt_extension.routing.robotstxt.content:
+  path: '/robots.txt'
+  defaults:
+    _controller: '\Drupal\iq_multidomain_robotstxt_extension\Controller\RobotsTxtController::content'
+    _disable_route_normalizer: 'TRUE'
+  requirements:
+    _access: 'TRUE'
