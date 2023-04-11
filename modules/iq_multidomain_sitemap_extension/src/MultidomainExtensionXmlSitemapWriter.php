@@ -14,7 +14,7 @@ class MultidomainExtensionXmlSitemapWriter extends XmlSitemapWriter {
    */
   public function writeElement($name, $content = NULL) {
     // Only print element if it has content.
-    if (count($content)) {
+    if ($content === NULL ? 0 : count($content)) {
       parent::writeElement($name, $content);
     }
   }

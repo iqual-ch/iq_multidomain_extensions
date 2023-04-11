@@ -16,7 +16,7 @@ function iq_multidomain_sitemap_extension_page_attachments_alter(array &$attachm
 
   $domainId = \Drupal::service('domain.negotiator')->getActiveId();
   $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
-  if ($config->get($domainId . '.domain_favicon') && count($config->get($domainId . '.domain_favicon'))) {
+  if ($config->get($domainId . '.domain_favicon') && (is_countable($config->get($domainId . '.domain_favicon')) ? count($config->get($domainId . '.domain_favicon')) : 0)) {
 
     $file = File::load($config->get($domainId . '.domain_favicon')[0]);
     if ($file) {

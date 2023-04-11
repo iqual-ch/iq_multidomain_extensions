@@ -4,7 +4,9 @@
  * @file
  */
 
-use Symfony\Component\Yaml\Yaml;
+use Drupal\iq_multidomain_extensions\DomainForm;
+use Drupal\domain\Form\DomainDeleteForm;
+use Drupal\iq_multidomain_extensions\Plugin\views\row\Pattern;
 use Drupal\Core\Render\BubbleableMetadata;
 
 /**
@@ -22,9 +24,9 @@ function iq_multidomain_extensions_entity_type_alter(&$entity_types) {
     $entity_types['domain']->setHandlerClass(
       'form',
       [
-        'default' => 'Drupal\iq_multidomain_extensions\DomainForm',
-        'edit' => 'Drupal\iq_multidomain_extensions\DomainForm',
-        'delete' => 'Drupal\domain\Form\DomainDeleteForm',
+        'default' => DomainForm::class,
+        'edit' => DomainForm::class,
+        'delete' => DomainDeleteForm::class,
       ]
     );
   }
@@ -34,6 +36,7 @@ function iq_multidomain_extensions_entity_type_alter(&$entity_types) {
  * Implements hook_token_info().
  */
 function iq_multidomain_extensions_token_info() {
+  $tokens = [];
   $type = ['name' => t('iqual domain extension'), 'description' => t('iqual domain extension tokens')];
   $tokens['url_prefix'] = ['name' => t("Domain URL prefix"), 'description' => t("Get the domain prefix.")];
   return [
@@ -110,7 +113,7 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
       '#id' => $pattern_id,
       '#fields' => $fields,
       '#multiple_sources' => TRUE,
-      '#variant' => isset($options['pattern_variant']) ? $options['pattern_variant'] : '',
+      '#variant' => $options['pattern_variant'] ?? '',
     ];
 
     // Allow default context values to not override those exposed elsewhere.
@@ -145,5 +148,5 @@ function iq_multidomain_extensions_mail($key, &$message, $params) {
 function iq_multidomain_extensions_views_plugins_row_alter(array &$plugins) {
 
   // Change the used class of a plugin.
-  $plugins['ui_patterns']['class'] = 'Drupal\\iq_multidomain_extensions\\Plugin\\views\\row\\Pattern';
+  $plugins['ui_patterns']['class'] = Pattern::class;
 }

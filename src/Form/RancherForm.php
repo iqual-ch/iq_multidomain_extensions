@@ -38,7 +38,7 @@ class RancherForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => 'Rancher endpoint',
       '#description' => $this->t('The rancher api endpoint.'),
-      '#default_value' => isset($rancher_endpoint) ? $rancher_endpoint : '',
+      '#default_value' => $rancher_endpoint ?? '',
     ];
 
     $form['notification_email'] = [
@@ -52,7 +52,7 @@ class RancherForm extends ConfigFormBase {
       '#type' => 'details',
       '#title' => $this->t('Menu'),
       '#description' => $this->t('This section allows to preset the menu settings.'),
-      '#open' => true
+      '#open' => TRUE,
     ];
 
     $form['menu']['create_menu'] = [
@@ -89,7 +89,7 @@ class RancherForm extends ConfigFormBase {
     $form['styling']['create_styling_profile'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Create styling profile'),
-      '#description' => $this->t('Whether to automatically create a styling profile with each new domain.')   . ((!$stylingProfileThemeSwitch) ? '<br />' . $this->t('Only available if styling_profiles_domain_switch is installed.') : ''),
+      '#description' => $this->t('Whether to automatically create a styling profile with each new domain.') . ((!$stylingProfileThemeSwitch) ? '<br />' . $this->t('Only available if styling_profiles_domain_switch is installed.') : ''),
       '#default_value' => $config->get('create_styling_profile'),
       '#disabled' => !$stylingProfileThemeSwitch,
     ];
@@ -98,13 +98,12 @@ class RancherForm extends ConfigFormBase {
     //   '#type' => 'details',
     //   '#title' => $this->t('Theme settings'),
     //   '#description' => $this->t('These settings allow to automatically copy a base theme with each new domain. Only available if domain_theme_switch is installed.'),
-
     // ];
     $form['styling']['copy_theme'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Copy the base theme'),
-      '#description' => $this->t('Whether to automatically copy the base theme on creating a new domain entry.')  . ((!$domainThemeSwitch) ? '<br />' . $this->t('Only available if domain_theme_switch is installed.') : ''),
-      '#default_value' => isset($copy_theme) ? $copy_theme : 0,
+      '#description' => $this->t('Whether to automatically copy the base theme on creating a new domain entry.') . ((!$domainThemeSwitch) ? '<br />' . $this->t('Only available if domain_theme_switch is installed.') : ''),
+      '#default_value' => $copy_theme ?? 0,
       '#disabled' => !$domainThemeSwitch,
     ];
 
@@ -112,18 +111,17 @@ class RancherForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => $this->t('Theme directory'),
       '#description' => $this->t('Path to the base theme, e.g. "themes/contrib".') . ((!$domainThemeSwitch) ? '<br />' . $this->t('Only available if domain_theme_switch is installed.') : ''),
-      '#default_value' => isset($directory_path) ? $directory_path : '',
+      '#default_value' => $directory_path ?? '',
       '#disabled' => !$domainThemeSwitch,
     ];
 
     $form['styling']['base_theme'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Base theme'),
-      '#description' => $this->t('Machine name of the base theme to be copied.')  . ((!$domainThemeSwitch) ? '<br />' . $this->t('Only available if domain_theme_switch is installed.') : ''),
-      '#default_value' => isset($base_theme) ? $base_theme : '',
+      '#description' => $this->t('Machine name of the base theme to be copied.') . ((!$domainThemeSwitch) ? '<br />' . $this->t('Only available if domain_theme_switch is installed.') : ''),
+      '#default_value' => $base_theme ?? '',
       '#disabled' => !$domainThemeSwitch,
     ];
-
 
     $form['actions']['#type'] = 'actions';
     $form['actions']['submit'] = [

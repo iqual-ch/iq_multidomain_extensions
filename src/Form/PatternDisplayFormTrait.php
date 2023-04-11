@@ -46,7 +46,7 @@ trait PatternDisplayFormTrait {
       '#empty_value' => '_none',
       '#title' => $this->t('Pattern'),
       '#options' => $pattern_options,
-      '#default_value' => isset($configuration['pattern']) ? $configuration['pattern'] : NULL,
+      '#default_value' => $configuration['pattern'] ?? NULL,
       '#required' => TRUE,
       '#attributes' => ['id' => 'patterns-select'],
     ];
@@ -58,7 +58,7 @@ trait PatternDisplayFormTrait {
           '#type' => 'select',
           '#title' => $this->t('Variant'),
           '#options' => $definition->getVariantsAsOptions(),
-          '#default_value' => isset($configuration['pattern_variant']) ? $configuration['pattern_variant'] : NULL,
+          '#default_value' => $configuration['pattern_variant'] ?? NULL,
           '#weight' => 0,
           '#states' => [
             'visible' => [

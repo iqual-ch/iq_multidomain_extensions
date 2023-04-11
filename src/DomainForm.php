@@ -67,7 +67,7 @@ class DomainForm extends OrigForm {
       $form['extensions']['create_styling_profile'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Create styling profile'),
-        '#description' => $this->t('Whether to automatically create a styling profile with each new domain.')   . ((!$stylingProfileThemeSwitch) ? '<br />' . $this->t('Only available if styling_profiles_domain_switch is installed.') : ''),
+        '#description' => $this->t('Whether to automatically create a styling profile with each new domain.') . ((!$stylingProfileThemeSwitch) ? '<br />' . $this->t('Only available if styling_profiles_domain_switch is installed.') : ''),
         '#default_value' => $baseConfig->get('create_styling_profile'),
         '#disabled' => !$stylingProfileThemeSwitch,
       ];

@@ -154,7 +154,7 @@ class DomainService {
     $ingresses = $this->client->ingresses($this->projectId)->getAll();
     $ingressExists = FALSE;
     foreach ($ingresses as $ingress) {
-      $ingressHostname = json_decode(json_encode($ingress->rules), TRUE)[0]['host'];
+      $ingressHostname = json_decode(json_encode($ingress->rules, JSON_THROW_ON_ERROR), TRUE, 512, JSON_THROW_ON_ERROR)[0]['host'];
       if ($ingress->name == $ingressName && $ingressHostname == $hostname) {
         $ingressExists = TRUE;
         break;
@@ -175,6 +175,7 @@ class DomainService {
    *
    */
   public function copyBaseTheme(string $newThemeName) {
+    $form = [];
     /** @var \Drupal\Core\Extension\ThemeHandler $themeHandler */
     $themeHandler = \Drupal::service('theme_handler');
     $themeHandler->refreshInfo();
@@ -246,7 +247,7 @@ class DomainService {
         else {
           $file_contents = file_get_contents($src . '/' . $file);
           $file_contents = str_replace($old_name, $new_name, $file_contents);
-          if (strpos($file, $old_name) != -1) {
+          if (strpos($file, (string) $old_name) != -1) {
             $file = str_replace($old_name, $new_name, $file);
           }
           file_put_contents($dst . '/' . $file, $file_contents);
@@ -287,6 +288,7 @@ class DomainService {
    *
    */
   public function processDomainForm($form, FormStateInterface $form_state) {
+    $params = [];
     if ($form['#isnew']) {
       $label = $form_state->getValue('name');
       $id = $form_state->getValue('id');

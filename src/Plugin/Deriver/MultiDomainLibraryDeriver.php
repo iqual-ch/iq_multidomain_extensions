@@ -26,7 +26,7 @@ class MultiDomainLibraryDeriver extends LibraryDeriver {
       if (!array_key_exists($theme_name, $directories) && in_array($theme_name, $installedThemes)) {
         $directories[$theme_name] = [
           'use_prefix' => TRUE,
-          'directory' => DRUPAL_ROOT . '/' . drupal_get_path('theme', $theme_name),
+          'directory' => DRUPAL_ROOT . '/' . \Drupal::service('extension.list.theme')->getPath($theme_name),
         ];
       }
     }
