@@ -6,7 +6,7 @@
   "license": "GPL-2.0+",
   "require": {
     "drupal/core": ">=8.6",
-    "drupal/domain": "^1.0",
+    "drupal/domain": "^1.0-beta8",
     "drupal/domain_site_settings": "^1.4",
     "drupal/xmlsitemap": "^1.1",
     "iqual/rancher-api": "*"
