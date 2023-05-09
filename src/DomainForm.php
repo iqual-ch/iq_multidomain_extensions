@@ -47,12 +47,13 @@ class DomainForm extends OrigForm {
       foreach ($contentTypes as $contentType) {
         $contentTypesList[$contentType->id()] = $contentType->label();
       }
+
       $form['extensions']['menu_content_types'] = [
         '#type' => 'checkboxes',
         '#title' => $this->t('Content types for new menu.'),
         '#description' => $this->t('Content types for new menu.'),
         '#options' => $contentTypesList,
-        '#default_value' => $baseConfig->get('menu_content_types'),
+        '#default_value' => ($baseConfig->get('menu_content_types')) ? $baseConfig->get('menu_content_types') : [],
       ];
 
       if ($domainThemeSwitch) {
