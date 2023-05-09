@@ -2,7 +2,7 @@
 
 namespace Drupal\iq_multidomain_extensions;
 
-use Drupal\domain\DomainForm as OrigForm;
+use Drupal\domain\Form\DomainForm as OrigForm;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
