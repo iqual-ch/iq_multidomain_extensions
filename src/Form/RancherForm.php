@@ -31,7 +31,6 @@ class RancherForm extends ConfigFormBase {
     $rancher_endpoint = $config->get('rancher_endpoint');
     $copy_theme = $config->get('copy_theme');
     $domainThemeSwitch = $moduleHandler->moduleExists('domain_theme_switch');
-    $domainAccess = $moduleHandler->moduleExists('domain_access');
     $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
 
     $form['rancher_endpoint'] = [
