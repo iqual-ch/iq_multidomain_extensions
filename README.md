@@ -53,7 +53,7 @@ Additionally incoming public requests have to be passed to the module (i.e. PHP)
 
 #### Kubernetes nginx ingress setup
 
-You also need to add the following annotation to all main domain ingresses on rancher:
+You also need to add the following annotation to all main domain ingresses:
 
 ```yaml
 nginx.ingress.kubernetes.io/configuration-snippet: |-

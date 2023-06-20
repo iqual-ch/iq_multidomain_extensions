@@ -6,47 +6,36 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Class RancherForm.
- *
- * @package Drupal\iq_multidomain_extensions\Form
+ * The settings form for iq_multidomain_extensions.
  */
-class RancherForm extends ConfigFormBase {
+class SettingsForm extends ConfigFormBase {
 
   /**
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'rancher_form';
+    return 'iq_multidomain_extensions_settings_form';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getEditableConfigNames() {
+    return ['iq_multidomain_extensions.settings'];
   }
 
   /**
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $config = $this->config('iq_multidomain_extensions.rancher_settings');
+    $config = $this->config('iq_multidomain_extensions.settings');
     $moduleHandler = \Drupal::service('module_handler');
 
     $base_theme = $config->get('base_theme');
     $directory_path = $config->get('directory_path');
-    $rancher_endpoint = $config->get('rancher_endpoint');
     $copy_theme = $config->get('copy_theme');
     $domainThemeSwitch = $moduleHandler->moduleExists('domain_theme_switch');
-    $domainAccess = $moduleHandler->moduleExists('domain_access');
     $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
-
-    $form['rancher_endpoint'] = [
-      '#type' => 'textfield',
-      '#title' => 'Rancher endpoint',
-      '#description' => $this->t('The rancher api endpoint.'),
-      '#default_value' => $rancher_endpoint ?? '',
-    ];
-
-    $form['notification_email'] = [
-      '#type' => 'email',
-      '#title' => 'Notification email',
-      '#description' => $this->t('The email address to notify about a new domain record.'),
-      '#default_value' => !empty($config->get('notification_email')) ? $config->get('notification_email') : '',
-    ];
 
     $form['menu'] = [
       '#type' => 'details',
@@ -94,11 +83,6 @@ class RancherForm extends ConfigFormBase {
       '#disabled' => !$stylingProfileThemeSwitch,
     ];
 
-    // $form['styling'] = [
-    //   '#type' => 'details',
-    //   '#title' => $this->t('Theme settings'),
-    //   '#description' => $this->t('These settings allow to automatically copy a base theme with each new domain. Only available if domain_theme_switch is installed.'),
-    // ];
     $form['styling']['copy_theme'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Copy the base theme'),
@@ -137,26 +121,15 @@ class RancherForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $this->config('iq_multidomain_extensions.rancher_settings')
+    $this->config('iq_multidomain_extensions.settings')
       ->set('directory_path', $form_state->getValue('directory_path'))
       ->set('base_theme', $form_state->getValue('base_theme'))
-      ->set('rancher_endpoint', $form_state->getValue('rancher_endpoint'))
       ->set('copy_theme', $form_state->getValue('copy_theme'))
       ->set('create_menu', $form_state->getValue('create_menu'))
-      ->set('notification_email', $form_state->getValue('notification_email'))
       ->set('menu_content_types', $form_state->getValue('menu_content_types'))
       ->set('create_styling_profile', $form_state->getValue('create_styling_profile'))
       ->save();
     parent::submitForm($form, $form_state);
-  }
-
-  /**
-   * Get Editable config names.
-   *
-   * @inheritDoc
-   */
-  protected function getEditableConfigNames() {
-    return ['iq_multidomain_extensions.rancher_settings'];
   }
 
 }

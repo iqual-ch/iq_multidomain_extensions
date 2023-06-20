@@ -16,7 +16,7 @@ class DomainForm extends OrigForm {
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
     $user = \Drupal::currentUser();
-    $baseConfig = $this->config('iq_multidomain_extensions.rancher_settings');
+    $baseConfig = $this->config('iq_multidomain_extensions.settings');
     $moduleHandler = \Drupal::service('module_handler');
     $domainThemeSwitch = $moduleHandler->moduleExists('domain_theme_switch');
     $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
@@ -53,7 +53,7 @@ class DomainForm extends OrigForm {
         '#title' => $this->t('Content types for new menu.'),
         '#description' => $this->t('Content types for new menu.'),
         '#options' => $contentTypesList,
-        '#default_value' => ($baseConfig->get('menu_content_types')) ? $baseConfig->get('menu_content_types') : [],
+        '#default_value' => $baseConfig->get('menu_content_types') ?: [],
       ];
 
       if ($domainThemeSwitch) {
