@@ -26,6 +26,7 @@ function iq_multidomain_sitemap_extension_xmlsitemap_context() {
  * Implements hook_xmlsitemap_context_info().
  */
 function iq_multidomain_sitemap_extension_xmlsitemap_context_info() {
+  $context = [];
   $context['domain_record'] = [
     'label' => t('Domain'),
     'default' => 0,
@@ -51,7 +52,7 @@ function iq_multidomain_sitemap_extension_form_xmlsitemap_sitemap_edit_form_alte
     '#type' => 'select',
     '#title' => t('Domain'),
     '#options' => $options,
-    '#default_value' => isset($form['#entity']->context['domain_record']) ? $form['#entity']->context['domain_record'] : $defaultDomainId,
+    '#default_value' => $form['#entity']->context['domain_record'] ?? $defaultDomainId,
   ];
 }
 
@@ -69,7 +70,7 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
     return;
   }
 
-  // Remove /node/id URLs from sitemap
+  // Remove /node/id URLs from sitemap.
   if (strpos($element['loc'], '/node/') !== FALSE) {
     $element = [];
     return;

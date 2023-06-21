@@ -7,8 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Extension\ModuleHandlerInterface;
-
+use Drupal\domain\DomainNegotiatorInterface;
 
 /**
  * Provides output robots.txt output.
@@ -23,13 +22,33 @@ class RobotsTxtController extends ControllerBase implements ContainerInjectionIn
   protected $config;
 
   /**
+   * The domain negotiator.
+   *
+   * @var \Drupal\domain\DomainNegotiatorInterface
+   */
+  protected $domainNegotiator;
+
+  /**
+   * The app root.
+   *
+   * @var string
+   */
+  protected $root = '';
+
+  /**
    * Constructs a RobotsTxtController object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config
    *   Configuration object factory.
+   * @param \Drupal\domain\DomainNegotiatorInterface $domain_negotiator
+   *   The domain negotiator.
+   * @param string $root
+   *   The app root.
    */
-  public function __construct(ConfigFactoryInterface $config) {
+  public function __construct(ConfigFactoryInterface $config, DomainNegotiatorInterface $domain_negotiator, string $root) {
     $this->config = $config->get('domain_site_settings.domainconfigsettings');
+    $this->domainNegotiator = $domain_negotiator;
+    $this->root = $root;
   }
 
   /**
@@ -38,6 +57,8 @@ class RobotsTxtController extends ControllerBase implements ContainerInjectionIn
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
+      $container->get('domain.negotiator'),
+      $container->getParameter('app.root')
     );
   }
 
@@ -48,8 +69,8 @@ class RobotsTxtController extends ControllerBase implements ContainerInjectionIn
    *   The robots.txt file as a response object with 'text/plain' content type.
    */
   public function content() {
-    $content = file_get_contents(\Drupal::root() . '/robots.txt');
-    $domainId = \Drupal::service('domain.negotiator')->getActiveId();
+    $content = file_get_contents($this->root . '/robots.txt');
+    $domainId = $this->domainNegotiator->getActiveId();
     if ($this->config->get($domainId . '.domain_robotstxt') && !empty($this->config->get($domainId . '.domain_robotstxt'))) {
       $content = $this->config->get($domainId . '.domain_robotstxt');
     }

@@ -6,9 +6,9 @@ use Drupal\ui_patterns_library\Plugin\Deriver\LibraryDeriver;
 use Drupal\Component\Serialization\Yaml;
 
 /**
- * Class MultiDomainLibraryDeriver.
+ * The deriver for ui_patterns.
  *
- * @package Drupal\ui_patterns_library\Deriver
+ * @todo Move pattern deriving to separate module.
  */
 class MultiDomainLibraryDeriver extends LibraryDeriver {
 
@@ -21,13 +21,15 @@ class MultiDomainLibraryDeriver extends LibraryDeriver {
     $domain_storage = \Drupal::service('entity_type.manager')->getStorage('domain');
 
     $installedThemes = array_keys(\Drupal::service('theme_handler')->listInfo());
-    foreach ($domain_storage->loadMultipleSorted() as $domain) {
-      $theme_name = \Drupal::config('domain_theme_switch.settings')->get($domain->id() . '_site');
-      if (!array_key_exists($theme_name, $directories) && in_array($theme_name, $installedThemes)) {
-        $directories[$theme_name] = [
-          'use_prefix' => TRUE,
-          'directory' => DRUPAL_ROOT . '/' . drupal_get_path('theme', $theme_name),
-        ];
+    if ($domain_theme_switch_config = \Drupal::config('domain_theme_switch.settings')) {
+      foreach ($domain_storage->loadMultipleSorted() as $domain) {
+        $theme_name = $domain_theme_switch_config->get($domain->id() . '_site');
+        if (!array_key_exists($theme_name, $directories) && in_array($theme_name, $installedThemes)) {
+          $directories[$theme_name] = [
+            'use_prefix' => TRUE,
+            'directory' => DRUPAL_ROOT . '/' . \Drupal::service('extension.list.theme')->getPath($theme_name),
+          ];
+        }
       }
     }
     foreach ($directories as $provider => $directory) {

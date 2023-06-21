@@ -1,8 +1,8 @@
 iq_multidomain_extensions.general_settings:
   path: '/admin/config/system/iqual_domain/configuration'
   defaults:
-    _title: 'Rancher Configuration'
-    _form: '\Drupal\iq_multidomain_extensions\Form\RancherForm'
+    _title: 'Multidomain Configuration'
+    _form: '\Drupal\iq_multidomain_extensions\Form\SettingsForm'
   requirements:
     _permission: 'administer iq_multidomain_extensions settings'
   options:

@@ -2,8 +2,6 @@
 
 namespace Drupal\iq_multidomain_extensions\Controller;
 
-use Drupal\Core\Form\FormState;
-use Drupal\iq_multidomain_extensions\IqualDomainListBuilder;
 use Drupal\ui_patterns_library\Controller\PatternsLibraryController;
 
 /**

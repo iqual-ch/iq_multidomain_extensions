@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * @file
+ * Iq_multidomain_extensions install and update hooks.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function iq_multidomain_extensions_install() {
+  module_set_weight('iq_multidomain_extensions', 999);
+}
+
+/**
+ * Update settings name and delete old settings.
+ */
+function iq_multidomain_extensions_update_9000() {
+  $oldConfig = \Drupal::configFactory()->getEditable('iq_multidomain_extensions.rancher_settings');
+  $newConfig = \Drupal::configFactory()->getEditable('iq_multidomain_extensions.settings');
+
+  $newConfig
+    ->set('create_styling_profile', $oldConfig->get('create_styling_profile'))
+    ->set('create_menu', $oldConfig->get('create_menu'))
+    ->set('menu_content_types', $oldConfig->get('menu_content_types'))
+    ->save();
+  $oldConfig->delete();
+}
