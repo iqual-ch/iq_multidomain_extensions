@@ -16,7 +16,7 @@ function iq_multidomain_extensions_install() {
  * Update settings name and delete old settings.
  */
 function iq_multidomain_extensions_update_9000() {
-  $oldConfig = \Drupal::config('iq_multidomain_extensions.rancher_settings');
+  $oldConfig = \Drupal::configFactory()->getEditable('iq_multidomain_extensions.rancher_settings');
   $newConfig = \Drupal::configFactory()->getEditable('iq_multidomain_extensions.settings');
 
   $newConfig
