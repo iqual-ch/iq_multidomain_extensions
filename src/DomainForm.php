@@ -46,7 +46,7 @@ class DomainForm extends OrigForm {
     $form = parent::form($form, $form_state);
 
     // Get settings.
-    $baseConfig = $this->config('iq_multidomain_extensions.settings');
+    $config = $this->config('iq_multidomain_extensions.settings');
 
     // Check for partner modules.
     $domainThemeSwitch = $this->moduleHandler->moduleExists('domain_theme_switch');
@@ -75,7 +75,7 @@ class DomainForm extends OrigForm {
         '#type' => 'checkbox',
         '#title' => $this->t('Create menu.'),
         '#description' => $this->t('Whether to automatically create a menu for the new domain.'),
-        '#default_value' => $baseConfig->get('create_menu'),
+        '#default_value' => $config->get('create_menu'),
       ];
       $contentTypes = $this->entityTypeManager->getStorage('node_type')->loadMultiple();
       $contentTypesList = [];
@@ -88,7 +88,7 @@ class DomainForm extends OrigForm {
         '#title' => $this->t('Content types for new menu.'),
         '#description' => $this->t('Content types for new menu.'),
         '#options' => $contentTypesList,
-        '#default_value' => $baseConfig->get('menu_content_types') ?: [],
+        '#default_value' => $config->get('menu_content_types') ?: [],
       ];
 
       if ($domainThemeSwitch) {
@@ -96,7 +96,7 @@ class DomainForm extends OrigForm {
           '#type' => 'checkbox',
           '#title' => $this->t('Copy the base theme'),
           '#description' => $this->t('Whether to automatically copy the base theme on creating a new domain entry.'),
-          '#default_value' => $baseConfig->get('copy_theme'),
+          '#default_value' => $config->get('copy_theme'),
           '#disabled' => !$domainThemeSwitch,
         ];
       }
@@ -104,7 +104,7 @@ class DomainForm extends OrigForm {
         '#type' => 'checkbox',
         '#title' => $this->t('Create styling profile'),
         '#description' => $this->t('Whether to automatically create a styling profile with each new domain.') . ((!$stylingProfileThemeSwitch) ? '<br />' . $this->t('Only available if styling_profiles_domain_switch is installed.') : ''),
-        '#default_value' => $baseConfig->get('create_styling_profile'),
+        '#default_value' => $config->get('create_styling_profile'),
         '#disabled' => !$stylingProfileThemeSwitch,
       ];
 
