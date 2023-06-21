@@ -2,8 +2,12 @@
 
 namespace Drupal\iq_multidomain_extensions;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\domain\Form\DomainForm as OrigForm;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\RendererInterface;
+use Drupal\domain\DomainStorageInterface;
+use Drupal\domain\DomainValidatorInterface;
 
 /**
  * Base form for domain edit forms.
@@ -11,15 +15,46 @@ use Drupal\Core\Form\FormStateInterface;
 class DomainForm extends OrigForm {
 
   /**
+   * The iq_multidomain_extensions domain service.
    *
+   * @var \Drupal\iq_multidomain_extensions\Service\DomainService
+   */
+  protected $domainService = NULL;
+
+  /**
+   * Constructs a DomainForm object.
+   *
+   * @param \Drupal\domain\DomainStorageInterface $domain_storage
+   *   The domain storage manager.
+   * @param \Drupal\Core\Render\RendererInterface $renderer
+   *   The renderer.
+   * @param \Drupal\domain\DomainValidatorInterface $validator
+   *   The domain validator.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   */
+  public function __construct(DomainStorageInterface $domain_storage, RendererInterface $renderer, DomainValidatorInterface $validator, EntityTypeManagerInterface $entity_type_manager) {
+    parent::__construct($domain_storage, $renderer, $validator, $entity_type_manager);
+    $this->domainService = \Drupal::service('iq_multidomain_extensions.service.domain');
+
+  }
+
+  /**
+   * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
-    $user = \Drupal::currentUser();
+
+    // Get settings.
     $baseConfig = $this->config('iq_multidomain_extensions.settings');
-    $moduleHandler = \Drupal::service('module_handler');
-    $domainThemeSwitch = $moduleHandler->moduleExists('domain_theme_switch');
-    $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
+
+    // Check for partner modules.
+    $domainThemeSwitch = $this->moduleHandler->moduleExists('domain_theme_switch');
+    $stylingProfileThemeSwitch = $this->moduleHandler->moduleExists('styling_profiles_domain_switch');
+
+    /** @var \Drupal\domain\Entity\Domain $domain */
+    $domain = $this->entity;
+
     $form['extensions'] = [
       '#type' => 'details',
       '#title' => $this->t('iqual extensions'),
@@ -28,21 +63,21 @@ class DomainForm extends OrigForm {
     ];
     $form['extensions']['url_prefix'] = [
       '#type' => 'textfield',
-      '#required' => (!$form_state->getFormObject()->getEntity()->isDefault()) ? TRUE : FALSE,
+      '#required' => (!$domain->isDefault()) ? TRUE : FALSE,
       '#title' => $this->t('URL prefix'),
       '#description' => $this->t('The url prefix for aliases for this domain.'),
-      '#default_value' => $this->entity->getThirdPartySetting('iq_multidomain_extensions', 'url_prefix'),
+      '#default_value' => $domain->getThirdPartySetting('iq_multidomain_extensions', 'url_prefix'),
     ];
     $form['validate_url']['#default_value'] = FALSE;
 
-    if ($this->entity->isNew()) {
+    if ($domain->isNew()) {
       $form['extensions']['create_menu'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Create menu.'),
         '#description' => $this->t('Whether to automatically create a menu for the new domain.'),
         '#default_value' => $baseConfig->get('create_menu'),
       ];
-      $contentTypes = \Drupal::service('entity_type.manager')->getStorage('node_type')->loadMultiple();
+      $contentTypes = $this->entityTypeManager->getStorage('node_type')->loadMultiple();
       $contentTypesList = [];
       foreach ($contentTypes as $contentType) {
         $contentTypesList[$contentType->id()] = $contentType->label();
@@ -73,22 +108,19 @@ class DomainForm extends OrigForm {
         '#disabled' => !$stylingProfileThemeSwitch,
       ];
 
-      $form['#isnew'] = TRUE;
       $form['hostname']['#field_suffix'] = '.' . getenv('DOMAIN_BASE');
       $form['hostname']['#default_value'] = str_replace('.' . getenv('DOMAIN_BASE'), '', $form['hostname']['#default_value']);
       $form['hostname']['#default_value'] = '';
       $form['name']['#default_value'] = '';
     }
-    else {
-      $form['#isnew'] = FALSE;
-    }
-    if (!$user->hasPermission('administer iq_multidomain_extensions domains')) {
+
+    if (!$this->currentUser()->hasPermission('administer iq_multidomain_extensions domains')) {
 
       $form['validate_url']['#type'] = 'hidden';
       $form['status']['#type'] = 'hidden';
       $form['scheme']['#type'] = 'hidden';
       $form['is_default']['#type'] = 'hidden';
-      if (!$this->entity->isNew()) {
+      if (!$domain->isNew()) {
         $form['hostname']['#disabled'] = TRUE;
       }
     }
@@ -96,34 +128,49 @@ class DomainForm extends OrigForm {
   }
 
   /**
-   *
+   * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    $user = \Drupal::currentUser();
-    if (!$user->hasPermission('administer iq_multidomain_extensions domains')) {
-      if ($this->entity->isNew()) {
+    /** @var \Drupal\domain\Entity\Domain $domain */
+    $domain = $this->entity;
+
+    if (!$this->currentUser()->hasPermission('administer iq_multidomain_extensions domains')) {
+      if ($domain->isNew()) {
         $form_state->setValue('hostname', $form_state->getValue('hostname') . '.' . getenv('DOMAIN_BASE'));
-        $this->entity->setHostname($form_state->getValue('hostname'));
+        $domain->setHostname($form_state->getValue('hostname'));
       }
     }
     parent::validateForm($form, $form_state);
   }
 
   /**
-   *
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    \Drupal::service('iq_multidomain_extensions.service.domain')->processDomainForm($form, $form_state);
+    /** @var \Drupal\domain\Entity\Domain $domain */
+    $domain = $this->entity;
+    if ($domain->isNew()) {
+      $label = $form_state->getValue('name');
+      $id = $form_state->getValue('id');
+      if ($form_state->getValue('create_menu')) {
+        $this->domainService->addMenu($label, 'multidomain-' . str_replace('_', '-', $id), $form_state->getValue('menu_content_types'));
+      }
+
+      if ($form_state->getValue('create_styling_profile')) {
+        $this->domainService->createStylingProfile($label, $id . '_site');
+      }
+    }
     parent::submitForm($form, $form_state);
   }
 
   /**
-   *
+   * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state) {
-    $this->entity->setThirdPartySetting('iq_multidomain_extensions', 'url_prefix', $form_state->getValue('url_prefix'));
+    /** @var \Drupal\domain\Entity\Domain $domain */
+    $domain = $this->entity;
+    $domain->setThirdPartySetting('iq_multidomain_extensions', 'url_prefix', $form_state->getValue('url_prefix'));
     parent::save($form, $form_state);
-    $user = \Drupal::currentUser();
   }
 
 }

@@ -2,10 +2,10 @@
 
 namespace Drupal\iq_multidomain_extensions\Service;
 
+use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\system\Entity\Menu;
-use Drupal\styling_profiles\Entity\StylingProfile;
 
 /**
  *
@@ -18,51 +18,68 @@ class DomainService {
    * @var Drupal\Core\Messenger\MessengerInterface
    */
   protected $messenger;
-  /**
-   * The drupal messenger.
-   *
-   * @var Drupal\Core\Messenger\MessengerInterface
-   */
-  protected $client;
-  /**
-   * The drupal messenger.
-   *
-   * @var Drupal\Core\Messenger\MessengerInterface
-   */
-  protected $domainBase;
 
+  /**
+   * The drupal config factory.
+   *
+   * @var \Drupal\Core\Config\ConfigFactory
+   */
+  protected $configFactory;
 
-  protected $domainNamespace = '';
-  protected $domainService = '';
-  protected $projectId = '';
-  protected $notificationEmail = '';
+  /**
+   * The entity manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * The module handler.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $moduleHandler;
 
   /**
    * Create a new instance.
    *
    * @param Drupal\Core\Messenger\MessengerInterface $messenger
    *   The drupal messenger.
-   * @param \Drupal\Core\Config\ImmutableConfig $config
-   *   The configuration.
+   * @param \Drupal\Core\Config\ConfigFactory $configFactory
+   *   The drupal config factory.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity manager.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler.
    */
-  public function __construct(MessengerInterface $messenger) {
+  public function __construct(
+    MessengerInterface $messenger,
+    ConfigFactory $configFactory,
+    EntityTypeManagerInterface $entity_type_manager,
+    ModuleHandlerInterface $module_handler
+    ) {
     $this->messenger = $messenger;
+    $this->configFactory = $configFactory;
+    $this->entityTypeManager = $entity_type_manager;
+    $this->moduleHandler = $module_handler;
 
-    $this->configuration = \Drupal::config('iq_multidomain_extensions.settings');
-
-    $this->themeDirectory = $this->configuration->get('directory_path');
-    $this->baseTheme = $this->configuration->get('base_theme');
-    $this->domainBase = getenv('DOMAIN_BASE');
   }
 
   /**
+   * Add a new menu.
    *
+   * @param string $label
+   *   Name of the menu.
+   * @param string $id
+   *   The id of the menu.
+   * @param array $contentTypes
+   *   The allowed content types.
    */
-  public function addMenu(string $label, string $id, $contentTypes = []) {
-    // Add a menu.
-    $menu = Menu::load($id);
+  public function addMenu(string $label, string $id, array $contentTypes = []) {
+    $storageManager = $this->entityTypeManager->getStorage('menu');
+    $menu = $storageManager->load($id);
     if ($menu == NULL) {
-      $menu = Menu::create([
+      $menu = $storageManager->create([
         'id' => $id,
         'label' => $label . ' - Main navigation',
         'description' => 'Main navigation menu for ' . $label,
@@ -70,53 +87,41 @@ class DomainService {
       $menu->save();
     }
     foreach ($contentTypes as $contentTypeId => $label) {
-      $contentType = \Drupal::service('entity_type.manager')->getStorage('node_type')->load($contentTypeId);
-      $menus = $contentType->getThirdPartySetting('menu_ui', 'available_menus');
+      /** @var \Drupal\node\NodeTypeInterface $content_type */
+      $content_type = $this->entityTypeManager->getStorage('node_type')->load($contentTypeId);
+      $menus = $content_type->getThirdPartySetting('menu_ui', 'available_menus');
       if (!in_array($id, $menus)) {
         $menus[] = $id;
-        $contentType->setThirdPartySetting('menu_ui', 'available_menus', $menus);
-        $contentType->save();
+        $content_type->setThirdPartySetting('menu_ui', 'available_menus', $menus);
+        $content_type->save();
       }
     }
-    if (\Drupal::moduleHandler()->moduleExists('pagetree')) {
-      $pagetree_settings = \Drupal::configFactory()->getEditable('pagetree.settings');
+    if ($this->moduleHandler->moduleExists('pagetree')) {
+      $pagetree_settings = $this->configFactory->getEditable('pagetree.settings');
       $pagetree_settings->set('menus', array_merge($pagetree_settings->get('menus'), [$menu->id() => $menu->id()]));
       $pagetree_settings->save();
     }
   }
 
   /**
+   * Create a new styling profile.
    *
+   * @param string $label
+   *   The label of the styling profile.
+   * @param string $id
+   *   The id of the the of the styling profile.
    */
   public function createStylingProfile(string $label, string $id) {
-    $profile = StylingProfile::create(['id' => $id, 'label' => $label]);
-    $profile->save();
-    $config = \Drupal::service('config.factory')->getEditable('styling_profiles_domain_switch.settings');
-    $config->set($id, $profile->id());
-    $config->save();
-  }
-
-  /**
-   * Undocumented function.
-   *
-   * @param array $form
-   *   The form.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The form stage.
-   */
-  public function processDomainForm($form, FormStateInterface $form_state) {
-    if ($form['#isnew']) {
-      $label = $form_state->getValue('name');
-      $id = $form_state->getValue('id');
-      if ($form_state->getValue('create_menu')) {
-        $this->addMenu($label, 'multidomain-' . str_replace('_', '-', $id), $form_state->getValue('menu_content_types'));
-      }
-
-      $moduleHandler = \Drupal::service('module_handler');
-      $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
-      if ($form_state->getValue('create_styling_profile') && $stylingProfileThemeSwitch) {
-        $this->createStylingProfile($label, $id . '_site');
-      }
+    if ($this->moduleHandler->moduleExists('styling_profiles_domain_switch')) {
+      $profile = $this->entityTypeManager->getStorage('styling_profile')->create(['id' => $id, 'label' => $label]);
+      $profile->save();
+      $config = $this->configFactory->getEditable('styling_profiles_domain_switch.settings');
+      $config->set($id, $profile->id());
+      $config->save();
+      return TRUE;
+    }
+    else {
+      return FALSE;
     }
   }
 
