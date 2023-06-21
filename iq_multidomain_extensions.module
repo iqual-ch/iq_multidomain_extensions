@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * Iq_multidomain_extensions module file.
  */
 
 use Drupal\iq_multidomain_extensions\DomainForm;
@@ -10,14 +11,7 @@ use Drupal\iq_multidomain_extensions\Plugin\views\row\Pattern;
 use Drupal\Core\Render\BubbleableMetadata;
 
 /**
- *
- */
-function iq_multidomain_extensions_install() {
-  module_set_weight('iq_multidomain_extensions', 999);
-}
-
-/**
- * @param \Drupal\Core\Entity\EntityTypeInterface[] $entity_types
+ * Implements hook_entity_type_alter().
  */
 function iq_multidomain_extensions_entity_type_alter(&$entity_types) {
   if (isset($entity_types['domain'])) {
@@ -37,8 +31,14 @@ function iq_multidomain_extensions_entity_type_alter(&$entity_types) {
  */
 function iq_multidomain_extensions_token_info() {
   $tokens = [];
-  $type = ['name' => t('iqual domain extension'), 'description' => t('iqual domain extension tokens')];
-  $tokens['url_prefix'] = ['name' => t("Domain URL prefix"), 'description' => t("Get the domain prefix.")];
+  $type = [
+    'name' => t('iqual domain extension'),
+    'description' => t('iqual domain extension tokens'),
+  ];
+  $tokens['url_prefix'] = [
+    'name' => t("Domain URL prefix"),
+    'description' => t("Get the domain prefix."),
+  ];
   return [
     'types' => ['iq_domain' => $type],
     'tokens' => ['iq_domain' => $tokens],
@@ -66,10 +66,7 @@ function iq_multidomain_extensions_tokens($type, $tokens, array $data, array $op
 }
 
 /**
- * Preprocess hook.
- *
- * @param array $variables
- *   Theme variables.
+ * Implements hook_preprocess_pattern_views_row().
  */
 function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variables) {
   /** @var \Drupal\views\ResultRow $row */
@@ -126,27 +123,9 @@ function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variable
 }
 
 /**
- * Implements hook_mail().
- */
-function iq_multidomain_extensions_mail($key, &$message, $params) {
-  $messenger = \Drupal::messenger();
-  $options = [
-    'langcode' => $message['langcode'],
-  ];
-  switch ($key) {
-    case 'q_multidomain_extensions_create_domain':
-      $message['from'] = \Drupal::config('system.site')->get('mail');
-      $message['subject'] = t('Domain created: @title', ['@title' => $params['domain_title']], $options);
-      $message['body'][] = $params['message'];
-      break;
-  }
-}
-
-/**
- *
+ * Implements hook_views_plugins_row_alter().
  */
 function iq_multidomain_extensions_views_plugins_row_alter(array &$plugins) {
-
   // Change the used class of a plugin.
   $plugins['ui_patterns']['class'] = Pattern::class;
 }
