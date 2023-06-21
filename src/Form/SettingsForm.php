@@ -31,10 +31,6 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('iq_multidomain_extensions.settings');
     $moduleHandler = \Drupal::service('module_handler');
 
-    $base_theme = $config->get('base_theme');
-    $directory_path = $config->get('directory_path');
-    $copy_theme = $config->get('copy_theme');
-    $domainThemeSwitch = $moduleHandler->moduleExists('domain_theme_switch');
     $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
 
     $form['menu'] = [
@@ -83,30 +79,6 @@ class SettingsForm extends ConfigFormBase {
       '#disabled' => !$stylingProfileThemeSwitch,
     ];
 
-    $form['styling']['copy_theme'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Copy the base theme'),
-      '#description' => $this->t('Whether to automatically copy the base theme on creating a new domain entry.') . ((!$domainThemeSwitch) ? '<br />' . $this->t('Only available if domain_theme_switch is installed.') : ''),
-      '#default_value' => $copy_theme ?? 0,
-      '#disabled' => !$domainThemeSwitch,
-    ];
-
-    $form['styling']['directory_path'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Theme directory'),
-      '#description' => $this->t('Path to the base theme, e.g. "themes/contrib".') . ((!$domainThemeSwitch) ? '<br />' . $this->t('Only available if domain_theme_switch is installed.') : ''),
-      '#default_value' => $directory_path ?? '',
-      '#disabled' => !$domainThemeSwitch,
-    ];
-
-    $form['styling']['base_theme'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Base theme'),
-      '#description' => $this->t('Machine name of the base theme to be copied.') . ((!$domainThemeSwitch) ? '<br />' . $this->t('Only available if domain_theme_switch is installed.') : ''),
-      '#default_value' => $base_theme ?? '',
-      '#disabled' => !$domainThemeSwitch,
-    ];
-
     $form['actions']['#type'] = 'actions';
     $form['actions']['submit'] = [
       '#type' => 'submit',
@@ -122,9 +94,6 @@ class SettingsForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $this->config('iq_multidomain_extensions.settings')
-      ->set('directory_path', $form_state->getValue('directory_path'))
-      ->set('base_theme', $form_state->getValue('base_theme'))
-      ->set('copy_theme', $form_state->getValue('copy_theme'))
       ->set('create_menu', $form_state->getValue('create_menu'))
       ->set('menu_content_types', $form_state->getValue('menu_content_types'))
       ->set('create_styling_profile', $form_state->getValue('create_styling_profile'))
