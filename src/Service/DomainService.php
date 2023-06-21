@@ -3,9 +3,11 @@
 namespace Drupal\iq_multidomain_extensions\Service;
 
 use Drupal\Core\Config\ConfigFactory;
+use Drupal\Core\Config\Entity\ConfigEntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\system\MenuStorage;
 
 /**
  * Helper service for domain processing.
@@ -77,6 +79,7 @@ class DomainService {
    */
   public function addMenu(string $label, string $id, array $contentTypes = []) {
     $storageManager = $this->entityTypeManager->getStorage('menu');
+    $id = substr($id, 0, MenuStorage::MAX_ID_LENGTH);
     $menu = $storageManager->load($id);
     if ($menu == NULL) {
       $menu = $storageManager->create([
@@ -112,6 +115,7 @@ class DomainService {
    *   The id of the the of the styling profile.
    */
   public function createStylingProfile(string $label, string $id) {
+    $id = substr($id, 0, ConfigEntityTypeInterface::ID_MAX_LENGTH);
     if ($this->moduleHandler->moduleExists('styling_profiles_domain_switch')) {
       $profile = $this->entityTypeManager
         ->getStorage('styling_profile')
