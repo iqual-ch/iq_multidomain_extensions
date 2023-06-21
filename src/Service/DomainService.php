@@ -8,7 +8,7 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 
 /**
- *
+ * Helper service for domain processing.
  */
 class DomainService {
 
@@ -113,7 +113,9 @@ class DomainService {
    */
   public function createStylingProfile(string $label, string $id) {
     if ($this->moduleHandler->moduleExists('styling_profiles_domain_switch')) {
-      $profile = $this->entityTypeManager->getStorage('styling_profile')->create(['id' => $id, 'label' => $label]);
+      $profile = $this->entityTypeManager
+        ->getStorage('styling_profile')
+        ->create(['id' => $id, 'label' => $label]);
       $profile->save();
       $config = $this->configFactory->getEditable('styling_profiles_domain_switch.settings');
       $config->set($id, $profile->id());

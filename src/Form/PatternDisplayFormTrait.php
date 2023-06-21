@@ -5,7 +5,7 @@ namespace Drupal\iq_multidomain_extensions\Form;
 use Drupal\ui_patterns\Form\PatternDisplayFormTrait as OriginalTrait;
 
 /**
- * Trait PatternDisplayFormTrait.
+ * Adds multidomain processing to trait.
  *
  * @property \Drupal\ui_patterns\UiPatternsManager $patternsManager
  * @property \Drupal\ui_patterns\UiPatternsSourceManager $sourceManager

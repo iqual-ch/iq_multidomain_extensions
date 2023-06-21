@@ -14,6 +14,7 @@ iq_multidomain_robotstxt_extension.routing.robots.content:
     _controller: '\Drupal\iq_multidomain_robotstxt_extension\Controller\RobotsTxtController::content'
     _disable_route_normalizer: 'TRUE'
   requirements:
+    # Search engines need to access this.
     _access: 'TRUE'
 
 iq_multidomain_robotstxt_extension.routing.robotstxt.content:
@@ -22,4 +23,5 @@ iq_multidomain_robotstxt_extension.routing.robotstxt.content:
     _controller: '\Drupal\iq_multidomain_robotstxt_extension\Controller\RobotsTxtController::content'
     _disable_route_normalizer: 'TRUE'
   requirements:
+    # Search engines need to access this.
     _access: 'TRUE'

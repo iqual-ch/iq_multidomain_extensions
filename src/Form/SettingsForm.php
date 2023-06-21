@@ -29,9 +29,7 @@ class SettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('iq_multidomain_extensions.settings');
-    $moduleHandler = \Drupal::service('module_handler');
-
-    $stylingProfileThemeSwitch = $moduleHandler->moduleExists('styling_profiles_domain_switch');
+    $stylingProfileThemeSwitch = \Drupal::service('module_handler')->moduleExists('styling_profiles_domain_switch');
 
     $form['menu'] = [
       '#type' => 'details',
@@ -46,6 +44,7 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Whether to automatically create a menu for a new domain entry.'),
       '#default_value' => !empty($config->get('create_menu')) ? $config->get('create_menu') : 0,
     ];
+
     $contentTypes = \Drupal::service('entity_type.manager')->getStorage('node_type')->loadMultiple();
     $contentTypesList = [];
     foreach ($contentTypes as $contentType) {
