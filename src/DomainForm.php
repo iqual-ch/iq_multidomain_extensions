@@ -49,7 +49,6 @@ class DomainForm extends OrigForm {
     $config = $this->config('iq_multidomain_extensions.settings');
 
     // Check for partner modules.
-    $domainThemeSwitch = $this->moduleHandler->moduleExists('domain_theme_switch');
     $stylingProfileThemeSwitch = $this->moduleHandler->moduleExists('styling_profiles_domain_switch');
 
     /** @var \Drupal\domain\Entity\Domain $domain */
@@ -91,15 +90,6 @@ class DomainForm extends OrigForm {
         '#default_value' => $config->get('menu_content_types') ?: [],
       ];
 
-      if ($domainThemeSwitch) {
-        $form['extensions']['copy_theme'] = [
-          '#type' => 'checkbox',
-          '#title' => $this->t('Copy the base theme'),
-          '#description' => $this->t('Whether to automatically copy the base theme on creating a new domain entry.'),
-          '#default_value' => $config->get('copy_theme'),
-          '#disabled' => !$domainThemeSwitch,
-        ];
-      }
       $form['extensions']['create_styling_profile'] = [
         '#type' => 'checkbox',
         '#title' => $this->t('Create styling profile'),
