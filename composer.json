@@ -5,7 +5,7 @@
   "homepage": "https://github.com/iqual-ch/iq_multidomain_extensions",
   "license": "GPL-2.0+",
   "require": {
-    "drupal/domain": "^2.0",
+    "drupal/domain": "^1.0",
     "drupal/domain_site_settings": "^1.4",
     "drupal/xmlsitemap": "^1.1"
   },
