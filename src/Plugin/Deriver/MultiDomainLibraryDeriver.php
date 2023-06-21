@@ -6,9 +6,7 @@ use Drupal\ui_patterns_library\Plugin\Deriver\LibraryDeriver;
 use Drupal\Component\Serialization\Yaml;
 
 /**
- * Class MultiDomainLibraryDeriver.
- *
- * @package Drupal\ui_patterns_library\Deriver
+ * The deriver for ui_patterns.
  */
 class MultiDomainLibraryDeriver extends LibraryDeriver {
 
