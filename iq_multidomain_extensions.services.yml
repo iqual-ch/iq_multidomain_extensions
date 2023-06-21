@@ -5,4 +5,4 @@ services:
       - { name: event_subscriber }
   iq_multidomain_extensions.service.domain:
     class: Drupal\iq_multidomain_extensions\Service\DomainService
-    arguments: ['@messenger', '@config_factory', '@entity_type.manager', '@module_handler']
+    arguments: ['@messenger', '@config.factory', '@entity_type.manager', '@module_handler']
