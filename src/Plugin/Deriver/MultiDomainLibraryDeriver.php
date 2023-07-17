@@ -2,8 +2,8 @@
 
 namespace Drupal\iq_multidomain_extensions\Plugin\Deriver;
 
-use Drupal\ui_patterns_library\Plugin\Deriver\LibraryDeriver;
 use Drupal\Component\Serialization\Yaml;
+use Drupal\ui_patterns_library\Plugin\Deriver\LibraryDeriver;
 
 /**
  * The deriver for ui_patterns.
@@ -55,8 +55,8 @@ class MultiDomainLibraryDeriver extends LibraryDeriver {
               $definition['id'] = $id;
             }
 
-            $definition['base path'] = dirname($file_path);
-            $definition['file name'] = basename($file_path);
+            $definition['base path'] = dirname((string) $file_path);
+            $definition['file name'] = basename((string) $file_path);
             $definition['provider'] = $provider;
 
             $new_pattern = $this->getPatternDefinition($definition);

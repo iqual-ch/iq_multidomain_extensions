@@ -2,8 +2,8 @@
 
 namespace Drupal\iq_multidomain_favicon_extension\Form;
 
-use Drupal\domain\DomainInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\domain\DomainInterface;
 use Drupal\domain_site_settings\Form\DomainConfigSettingsForm;
 use Drupal\file\Entity\File;
 

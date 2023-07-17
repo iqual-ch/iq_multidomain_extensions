@@ -5,10 +5,10 @@
  * Iq_multidomain_extensions module file.
  */
 
-use Drupal\iq_multidomain_extensions\DomainForm;
-use Drupal\domain\Form\DomainDeleteForm;
-use Drupal\iq_multidomain_extensions\Plugin\views\row\Pattern;
 use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\domain\Form\DomainDeleteForm;
+use Drupal\iq_multidomain_extensions\DomainForm;
+use Drupal\iq_multidomain_extensions\Plugin\views\row\Pattern;
 
 /**
  * Implements hook_entity_type_alter().

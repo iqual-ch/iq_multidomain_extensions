@@ -2,12 +2,12 @@
 
 namespace Drupal\iq_multidomain_robotstxt_extension\Controller;
 
-use Drupal\Core\Controller\ControllerBase;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\domain\DomainNegotiatorInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Provides output robots.txt output.

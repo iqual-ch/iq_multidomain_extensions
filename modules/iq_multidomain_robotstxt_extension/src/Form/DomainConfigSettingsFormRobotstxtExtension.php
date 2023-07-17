@@ -2,9 +2,9 @@
 
 namespace Drupal\iq_multidomain_robotstxt_extension\Form;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\domain\DomainInterface;
 use Drupal\iq_multidomain_favicon_extension\Form\DomainConfigSettingsFormFaviconExtension;
-use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Class DomainConfigSettingsForm.

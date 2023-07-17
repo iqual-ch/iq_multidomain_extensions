@@ -71,7 +71,7 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
   }
 
   // Remove /node/id URLs from sitemap.
-  if (strpos($element['loc'], '/node/') !== FALSE) {
+  if (str_contains((string) $element['loc'], '/node/')) {
     $element = [];
     return;
   }
@@ -91,7 +91,7 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
   // Replace base URL with domain's host.
   $baseUrl = $sitemap->get('uri')['options']['base_url'];
   $domainHost = $domain->get('scheme') . '://' . $domain->get('hostname');
-  $element['loc'] = str_replace($baseUrl, $domainHost, $element['loc']);
+  $element['loc'] = str_replace($baseUrl, $domainHost, (string) $element['loc']);
 
   // Remove element if link's domain doesn't match the XML's domain.
   if (domain_source_get($entity) && domain_source_get($entity) !== $sitemap->context['domain_record']) {
