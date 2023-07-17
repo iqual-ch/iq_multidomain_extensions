@@ -3,7 +3,7 @@ description: Contains extensions, config etc. for a multidomain setup
 package: Domain
 
 type: module
-core_version_requirement: ^9
+core_version_requirement: ^9.5 || ^10
 dependencies:
   - domain:domain
   - domain:domain_source
