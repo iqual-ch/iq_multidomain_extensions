@@ -1,11 +1,10 @@
 <?php
 
-
-use Drupal\iq_multidomain_domain_theme_switch\Plugin\views\row\Pattern;
-
 /**
  * @file
  */
+
+use Drupal\iq_multidomain_domain_theme_switch\Plugin\views\row\Pattern;
 
 /**
  * Implements hook_ui_patterns_info_alter().
@@ -23,7 +22,64 @@ function iq_multidomain_domain_theme_switch_ui_patterns_info_alter(array &$defin
 /**
  * Implements hook_views_plugins_row_alter().
  */
-function iq_multidomain_extensions_views_plugins_row_alter(array &$plugins) {
+function iq_multidomain_domain_theme_switch_views_plugins_row_alter(array &$plugins) {
   // Change the used class of a plugin.
   $plugins['ui_patterns']['class'] = Pattern::class;
+}
+
+/**
+ * Implements hook_preprocess_pattern_views_row().
+ */
+function iq_multidomain_domain_theme_switch_preprocess_pattern_views_row(array &$variables) {
+
+  $fields = [];
+  /** @var \Drupal\views\ViewExecutable $view */
+  $view = $variables['view'];
+  /** @var \Drupal\ui_patterns_views\Plugin\views\row\Pattern $row_plugin */
+  $row_plugin = $view->rowPlugin;
+  /** @var \Drupal\views\ResultRow $row */
+  $row = $variables['row'];
+
+  $options = $variables['options'];
+  $pattern_prefix = FALSE;
+
+  if (\Drupal::service('theme.manager')->getActiveTheme()->getName() != \Drupal::config('system.theme')->get('default')) {
+    $pattern_prefix = \Drupal::service('theme.manager')->getActiveTheme()->getName() . '_';
+    $pattern_ids = array_keys(\Drupal::service('plugin.manager.ui_patterns')->getDefinitions());
+  }
+
+  foreach ($options['pattern_mapping'] as $mapping) {
+    $field_name = $mapping['source'];
+    $field = $view->field[$field_name];
+    $field_output = $view->style_plugin->getField($row->index, $field_name);
+    if ($row_plugin->isFieldVisible($field, $field_output)) {
+      $destination = $row_plugin->getMappingDestination('views_row', $field_name, $options);
+      $fields[$destination][] = $field_output;
+    }
+  }
+
+  $variables['pattern'] = [];
+  if (empty($view->live_preview) && !empty($fields)) {
+    if ($pattern_prefix && in_array($pattern_prefix . $options['pattern'], $pattern_ids)) {
+      $pattern_id = $pattern_prefix . $options['pattern'];
+    }
+    else {
+      $pattern_id = $options['pattern'];
+    }
+
+    $variables['pattern'] = [
+      '#type' => 'pattern',
+      '#id' => $pattern_id,
+      '#fields' => $fields,
+      '#multiple_sources' => TRUE,
+      '#variant' => $options['pattern_variant'] ?? '',
+    ];
+
+    // Allow default context values to not override those exposed elsewhere.
+    $variables['pattern']['#context']['type'] = 'views_row';
+    $variables['pattern']['#context']['view_name'] = $view->storage->id();
+    $variables['pattern']['#context']['display'] = $view->current_display;
+    $variables['pattern']['#context']['view'] = $view;
+    $variables['pattern']['#context']['row'] = $row;
+  }
 }
