@@ -2,7 +2,7 @@
 
 namespace Drupal\iq_multidomain_domain_theme_switch\Plugin\views\row;
 
-use Drupal\iq_multidomain_extensions\Form\PatternDisplayFormTrait;
+use Drupal\iq_multidomain_domain_theme_switch\Form\PatternDisplayFormTrait;
 use Drupal\ui_patterns_views\Plugin\views\row\Pattern as OriginalPattern;
 
 /**

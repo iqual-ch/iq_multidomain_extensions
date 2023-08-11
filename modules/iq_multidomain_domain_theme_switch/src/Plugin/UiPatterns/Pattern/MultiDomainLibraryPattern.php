@@ -13,7 +13,7 @@ use Drupal\ui_patterns_library\Plugin\UiPatterns\Pattern\LibraryPattern;
  *   id = "MultiDomainLibraryPattern",
  *   label = @Translation("MultiDomain Library Pattern"),
  *   description = @Translation("Pattern defined using a YAML file."),
- *   deriver = "\Drupal\iq_multidomain_extensions\Plugin\Deriver\MultiDomainLibraryDeriver"
+ *   deriver = "\Drupal\iq_multidomain_domain_theme_switch\Plugin\Deriver\MultiDomainLibraryDeriver"
  * )
  */
 class MultiDomainLibraryPattern extends LibraryPattern {
