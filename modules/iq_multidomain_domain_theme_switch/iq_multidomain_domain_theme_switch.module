@@ -1,0 +1,29 @@
+<?php
+
+
+use Drupal\iq_multidomain_domain_theme_switch\Plugin\views\row\Pattern;
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_ui_patterns_info_alter().
+ *
+ * Remove patterns detected by default pattern deriver.
+ */
+function iq_multidomain_domain_theme_switch_ui_patterns_info_alter(array &$definitions) {
+  foreach ($definitions as $key => $patternDefinition) {
+    if (strpos($key, 'yaml') === 0) {
+      unset($definitions[$key]);
+    }
+  }
+}
+
+/**
+ * Implements hook_views_plugins_row_alter().
+ */
+function iq_multidomain_extensions_views_plugins_row_alter(array &$plugins) {
+  // Change the used class of a plugin.
+  $plugins['ui_patterns']['class'] = Pattern::class;
+}
