@@ -1,0 +1,8 @@
+name: iqual multidomain theme switch Extension
+description: Extension to process multiple themes with ui_patterns
+package: Domain
+
+type: module
+core_version_requirement: ^9
+dependencies:
+  - domain_theme_switch:domain_theme_switch
