@@ -13,7 +13,7 @@ use Drupal\iq_multidomain_domain_theme_switch\Plugin\views\row\Pattern;
  */
 function iq_multidomain_domain_theme_switch_ui_patterns_info_alter(array &$definitions) {
   foreach ($definitions as $key => $patternDefinition) {
-    if (strpos($key, 'yaml') === 0) {
+    if (str_starts_with($key, 'yaml')) {
       unset($definitions[$key]);
     }
   }
