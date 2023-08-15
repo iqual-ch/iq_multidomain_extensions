@@ -93,6 +93,12 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
   $domainHost = $domain->get('scheme') . '://' . $domain->get('hostname');
   $element['loc'] = str_replace($baseUrl, $domainHost, (string) $element['loc']);
 
+  // Make sure we are in the correct context in case of translated domains.
+  $langcode_context = $sitemap->context['language'];
+  if ($entity->hasTranslation($langcode_context)) {
+    $entity = $entity->getTranslation($langcode_context);
+  }
+
   // Remove element if link's domain doesn't match the XML's domain.
   if (domain_source_get($entity) && domain_source_get($entity) !== $sitemap->context['domain_record']) {
     $element = [];

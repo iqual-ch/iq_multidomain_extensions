@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\iq_multidomain_extensions\Form;
+namespace Drupal\iq_multidomain_domain_theme_switch\Form;
 
 use Drupal\ui_patterns\Form\PatternDisplayFormTrait as OriginalTrait;
 
