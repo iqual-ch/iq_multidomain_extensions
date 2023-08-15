@@ -26,3 +26,14 @@ function iq_multidomain_extensions_update_9000() {
     ->save();
   $oldConfig->delete();
 }
+
+/**
+ * Install corresponding sub module if domain_theme_switch is enabled.
+ */
+function iq_multidomain_extensions_update_9001() {
+  if (\Drupal::moduleHandler()->moduleExists('domain_theme_switch')) {
+    /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
+    $module_installer = \Drupal::service('module_installer');
+    $module_installer->install(['iq_multidomain_domain_theme_switch']);
+  }
+}
