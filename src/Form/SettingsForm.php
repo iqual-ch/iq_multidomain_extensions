@@ -55,7 +55,7 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Content types for new menu.'),
       '#description' => $this->t('Content types for new menu.'),
       '#options' => $contentTypesList,
-      '#default_value' => $config->get('menu_content_types'),
+      '#default_value' => $config->get('menu_content_types') ?? [],
     ];
 
     $form['menu']['create_menu'] = [
