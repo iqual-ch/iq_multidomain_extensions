@@ -45,9 +45,14 @@ function iq_multidomain_favicon_extension_form_system_site_information_settings_
   $default_value = \Drupal::config('domain.config.' . $domain_id . '.system.site')->get('favicon') ?? '';
 
   $form['iq_multidomain_extensions']['favicon'] = [
-    '#type' => 'textfield',
+    '#type' => 'managed_file',
+    '#upload_location' => 'public://domain-favicons/',
     '#title' => t('Favicon'),
     '#default_value' => $default_value,
+    '#description' => t("Custom favicon.ico for domain. If this is not set, the default favicon is used."),
+    '#upload_validators' => [
+      'file_validate_extensions' => ['ico'],
+    ],
   ];
 
   // Add an additional submit handler to save
