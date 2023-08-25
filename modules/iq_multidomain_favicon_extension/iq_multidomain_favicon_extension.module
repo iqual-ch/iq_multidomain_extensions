@@ -77,7 +77,6 @@ function iq_multidomain_favicon_extension_system_site_information_settings_submi
 function iq_multidomain_favicon_extension_page_attachments_alter(array &$attachments) {
 
   $domainId = \Drupal::service('domain.negotiator')->getActiveId();
-  $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
   $config = \Drupal::service('config.factory')->getEditable('domain.config.' . $domainId . '.system.site');
   $favicon = $config->get('favicon');
 
