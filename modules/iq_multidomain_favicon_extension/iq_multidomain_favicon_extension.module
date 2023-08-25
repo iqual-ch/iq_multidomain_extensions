@@ -5,7 +5,64 @@
  * Contains iq_multidomain_favicon_extension.module.
  */
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\file\Entity\File;
+
+/**
+ * Implements hook_config_schema_info_alter().
+ *
+ * Adds the favicon to the system.site mapping.
+ */
+function iq_multidomain_favicon_extension_config_schema_info_alter(&$definitions) {
+  $definitions['system.site']['mapping']['favicon'] = [
+    'type' => 'label',
+    'label' => 'Favicon',
+  ];
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Adds field for the favicon to the system_site_information_settings form.
+ */
+function iq_multidomain_favicon_extension_form_system_site_information_settings_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if (!isset($form['iq_multidomain_extensions'])) {
+    $form['iq_multidomain_extensions'] = [
+      '#type' => 'details',
+      '#title' => t('Iqual Multidomain Settings'),
+      '#open' => TRUE,
+    ];
+  }
+
+  // Get the domain id from the domain name provided in the form.
+  $domain_name = $form['site_information']['site_name']['#default_value'];
+  $domains = \Drupal::entityTypeManager()->getStorage('domain')->loadByProperties([
+    'name' => $domain_name,
+  ]);
+  $domain = reset($domains);
+  $domain_id = $domain->id();
+
+  $default_value = \Drupal::config('domain.config.' . $domain_id . '.system.site')->get('favicon') ?? '';
+
+  $form['iq_multidomain_extensions']['favicon'] = [
+    '#type' => 'textfield',
+    '#title' => t('Favicon'),
+    '#default_value' => $default_value,
+  ];
+
+  // Add an additional submit handler to save
+  // the favicon value to the site config.
+  $form['#submit'][] = 'iq_multidomain_favicon_extension_system_site_information_settings_submit';
+}
+
+/**
+ * Form submission handler.
+ */
+function iq_multidomain_favicon_extension_system_site_information_settings_submit(array $form, FormStateInterface $form_state) {
+  \Drupal::configFactory()->getEditable('system.site')
+    ->set('favicon', $form_state->getValue('favicon'))
+    ->save();
+}
 
 /**
  * Implements hook_page_attachments_alter().
