@@ -78,9 +78,11 @@ function iq_multidomain_favicon_extension_page_attachments_alter(array &$attachm
 
   $domainId = \Drupal::service('domain.negotiator')->getActiveId();
   $config = \Drupal::service('config.factory')->getEditable('domain_site_settings.domainconfigsettings');
-  if ($config->get($domainId . '.domain_favicon') && (is_countable($config->get($domainId . '.domain_favicon')) ? count($config->get($domainId . '.domain_favicon')) : 0)) {
+  $config = \Drupal::service('config.factory')->getEditable('domain.config.' . $domainId . '.system.site');
+  $favicon = $config->get('favicon');
 
-    $file = File::load($config->get($domainId . '.domain_favicon')[0]);
+  if ($favicon && (is_countable($favicon) ? count($favicon) : 0)) {
+    $file = File::load($favicon[0]);
     if ($file) {
       $faviconUrl = $file->createFileUrl();
       foreach ($attachments['#attached']['html_head_link'] as $index => $headLinkElement) {
