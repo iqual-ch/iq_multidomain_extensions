@@ -36,7 +36,7 @@ function iq_multidomain_favicon_extension_form_system_site_information_settings_
 
   // Get the domain id and the language set in the SwitchForm.
   [$domain, $language] = _iq_multidomain_favicon_extension_get_domain_and_language();
-  $default_value = _iq_multidomain_favicon_extension_get_favicon_default_value($domain, $language);
+  $default_value = _iq_multidomain_favicon_extension_get_favicon($domain, $language, $settings = TRUE);
 
   $form['iq_multidomain_extensions']['favicon'] = [
     '#type' => 'managed_file',
@@ -80,59 +80,62 @@ function _iq_multidomain_favicon_extension_get_domain_and_language() {
 }
 
 /**
- * Get the default favicon value.
- *
- * Get the default favicon value for the site system information
- * form. The domain_config_ui module saves it under the
- * 'domain.config.<domain>.<language>.system.site' configuration.
+ * Get the favicon.
  *
  * @param string $domain
  *   The domain id.
- * @param string $language
+ * @param string|null $language
  *   The language id.
+ * @param bool $settings
+ *   The settings boolean.
  *
  * @return array|null
  *   Return the favicon id in an array or NULL.
  */
-function _iq_multidomain_favicon_extension_get_favicon_default_value($domain, $language) {
-  $config = 'domain.config';
-  if ($domain) {
-    $config = $config .= '.' . $domain;
+function _iq_multidomain_favicon_extension_get_favicon($domain, $language = NULL, $settings = FALSE) {
+
+  /*
+   * Return null if domain is not specified. There cannot be a 'domain.config'
+   * configuration without the domain name.
+   */
+  if (!$domain) {
+    return NULL;
   }
+
+  $config = 'domain.config.' . $domain;
+
+  /*
+   * If language is passed, check for the 'domain.config' language
+   * specific domain configuration.
+   *
+   * 'domain.config.<domain>.<language>.system.site',
+   *
+   * Else, search for the one for the domain:
+   *
+   * 'domain.config.<domain>.system.site'.
+   */
   if ($language) {
-    $config = $config .= '.' . $language;
-  }
-  $config .= '.system.site';
+    $config = $config .= '.' . $language . '.system.site';
+    $favicon = \Drupal::config($config)->get('favicon');
 
-  return \Drupal::config($config)->get('favicon') ?? NULL;
-}
-
-/**
- * Get Favicon.
- *
- * If a user sets a favicon for each language, the module domain_config_ui
- * saves the config under 'domain.config.<domain>.<language>.system.site
- * configuration. If not it saves the icon for per domain only under
- * 'domain.config.<domain>.system.site'.
- *
- * @param string $domain
- *   The domain id.
- * @param string $language
- *   The language id.
- *
- * @return array|null
- *   Return the favicon id in an array or NULL.
- */
-function _iq_multidomain_favicon_extension_get_favicon($domain, $language) {
-  $favicon = _iq_multidomain_favicon_extension_get_favicon_default_value($domain, $language);
-
-  if ($favicon) {
-    return $favicon;
+    if ($settings) {
+      /*
+       * If the favicon value is being retrieved for the site-settings form
+       * the language specific domain favicon should be returned.
+       */
+      return !empty($favicon) ? $favicon : NULL;
+    }
+    else {
+      /*
+       * Else, fall back to the master domain favicon.
+       */
+      return !empty($favicon) ? $favicon : _iq_multidomain_favicon_extension_get_favicon($domain, NULL);
+    }
   }
 
-  $config = 'domain.config.' . $domain . '.system.site';
-
-  return \Drupal::config($config)->get('favicon') ?? NULL;
+  $config = $config .= '.system.site';
+  $favicon = \Drupal::config($config)->get('favicon');
+  return !empty($favicon) ? $favicon : NULL;
 }
 
 /**
