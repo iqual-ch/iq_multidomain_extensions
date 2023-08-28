@@ -34,15 +34,9 @@ function iq_multidomain_favicon_extension_form_system_site_information_settings_
     ];
   }
 
-  // Get the domain id from the domain name provided in the form.
-  $domain_name = $form['site_information']['site_name']['#default_value'];
-  $domains = \Drupal::entityTypeManager()->getStorage('domain')->loadByProperties([
-    'name' => $domain_name,
-  ]);
-  $domain = reset($domains);
-  $domain_id = $domain->id();
-
-  $default_value = \Drupal::config('domain.config.' . $domain_id . '.system.site')->get('favicon') ?? '';
+  // Get the domain id and the language set in the SwitchForm.
+  [$domain, $language] = _iq_multidomain_favicon_extension_get_domain_and_language();
+  $default_value = _iq_multidomain_favicon_extension_get_favicon_default_value($domain, $language);
 
   $form['iq_multidomain_extensions']['favicon'] = [
     '#type' => 'managed_file',
@@ -61,6 +55,87 @@ function iq_multidomain_favicon_extension_form_system_site_information_settings_
 }
 
 /**
+ * Get the selected domain and langcode.
+ *
+ * Return the domain and langcode, selected in the SwitchForm,
+ * titled 'Domain Configuration' on /admin/config/system/site-information/
+ * provided by the drupal/domain_config_ui sub-module.
+ *
+ * @return [string|null, string|null]
+ *   Return the selected domain id and langcode.
+ */
+function _iq_multidomain_favicon_extension_get_domain_and_language() {
+  $remember_domain = \Drupal::config('domain_config_ui.settings')->get('remember_domain');
+
+  if ($remember_domain) {
+    $domain = $_SESSION['domain_config_ui_domain'];
+    $langcode = $_SESSION['domain_config_ui_language'];
+  }
+  else {
+    $request = \Drupal::request();
+    $domain = $request->query->get('domain_config_ui_domain') ?? NULL;
+    $langcode = $request->query->get('domain_config_ui_language') ?? NULL;
+  }
+  return [$domain, $langcode];
+}
+
+/**
+ * Get the default favicon value.
+ *
+ * Get the default favicon value for the site system information
+ * form. The domain_config_ui module saves it under the
+ * 'domain.config.<domain>.<language>.system.site' configuration.
+ *
+ * @param string $domain
+ *   The domain id.
+ * @param string $language
+ *   The language id.
+ *
+ * @return array|null
+ *   Return the favicon id in an array or NULL.
+ */
+function _iq_multidomain_favicon_extension_get_favicon_default_value($domain, $language) {
+  $config = 'domain.config';
+  if ($domain) {
+    $config = $config .= '.' . $domain;
+  }
+  if ($language) {
+    $config = $config .= '.' . $language;
+  }
+  $config .= '.system.site';
+
+  return \Drupal::config($config)->get('favicon') ?? NULL;
+}
+
+/**
+ * Get Favicon.
+ *
+ * If a user sets a favicon for each language, the module domain_config_ui
+ * saves the config under 'domain.config.<domain>.<language>.system.site
+ * configuration. If not it saves the icon for per domain only under
+ * 'domain.config.<domain>.system.site'.
+ *
+ * @param string $domain
+ *   The domain id.
+ * @param string $language
+ *   The language id.
+ *
+ * @return array|null
+ *   Return the favicon id in an array or NULL.
+ */
+function _iq_multidomain_favicon_extension_get_favicon($domain, $language) {
+  $favicon = _iq_multidomain_favicon_extension_get_favicon_default_value($domain, $language);
+
+  if ($favicon) {
+    return $favicon;
+  }
+
+  $config = 'domain.config.' . $domain . '.system.site';
+
+  return \Drupal::config($config)->get('favicon') ?? NULL;
+}
+
+/**
  * Form submission handler.
  */
 function iq_multidomain_favicon_extension_system_site_information_settings_submit(array $form, FormStateInterface $form_state) {
@@ -76,9 +151,10 @@ function iq_multidomain_favicon_extension_system_site_information_settings_submi
  */
 function iq_multidomain_favicon_extension_page_attachments_alter(array &$attachments) {
 
-  $domainId = \Drupal::service('domain.negotiator')->getActiveId();
-  $config = \Drupal::service('config.factory')->getEditable('domain.config.' . $domainId . '.system.site');
-  $favicon = $config->get('favicon');
+  $domain = \Drupal::service('domain.negotiator')->getActiveId();
+  $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+  $favicon = _iq_multidomain_favicon_extension_get_favicon($domain, $language);
 
   if ($favicon && (is_countable($favicon) ? count($favicon) : 0)) {
     $file = File::load($favicon[0]);
