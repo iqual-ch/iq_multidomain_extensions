@@ -63,3 +63,89 @@ function iq_multidomain_extensions_tokens($type, $tokens, array $data, array $op
   }
   return $replacements;
 }
+
+/**
+ * Get the selected domain and langcode.
+ *
+ * Return the domain and langcode, selected in the SwitchForm,
+ * titled 'Domain Configuration' on /admin/config/system/site-information/
+ * provided by the drupal/domain_config_ui sub-module.
+ *
+ * @return [string|null, string|null]
+ *   Return the selected domain id and langcode.
+ */
+function _iq_multidomain_extensions_get_domain_and_language() {
+  $remember_domain = \Drupal::config('domain_config_ui.settings')->get('remember_domain');
+
+  if ($remember_domain) {
+    $domain = $_SESSION['domain_config_ui_domain'];
+    $langcode = $_SESSION['domain_config_ui_language'];
+  }
+  else {
+    $request = \Drupal::request();
+    $domain = $request->query->get('domain_config_ui_domain') ?? NULL;
+    $langcode = $request->query->get('domain_config_ui_language') ?? NULL;
+  }
+  return [$domain, $langcode];
+}
+
+/**
+ * Get the config property value.
+ *
+ * @param string $property
+ *   The property.
+ * @param string $domain
+ *   The domain id.
+ * @param string|null $language
+ *   The language id.
+ * @param bool $settings
+ *   The settings boolean.
+ *
+ * @return string|array|null
+ *   Return the property in a string, an array or NULL.
+ */
+function _iq_multidomain_extensions_get_config_property_value($property, $domain, $language = NULL, $settings = FALSE) {
+
+  /*
+   * Return null if domain is not specified. There cannot be a 'domain.config'
+   * configuration without the domain name.
+   */
+  if (!$domain) {
+    return NULL;
+  }
+
+  $config = 'domain.config.' . $domain;
+
+  /*
+   * If language is passed, check for the 'domain.config' language
+   * specific domain configuration.
+   *
+   * 'domain.config.<domain>.<language>.system.site',
+   *
+   * Else, search for the one for the domain:
+   *
+   * 'domain.config.<domain>.system.site'.
+   */
+  if ($language) {
+    $config = $config .= '.' . $language . '.system.site';
+    $value = \Drupal::config($config)->get($property);
+
+    if ($settings) {
+      /*
+       * If the property value is being retrieved for the site-settings form,
+       * the language specific domain property should be returned.
+       */
+      return !empty($value) ? $value : NULL;
+    }
+    else {
+      /*
+       * Else, fall back to the master domain value.
+       */
+      return !empty($value) ? $value : _iq_multidomain_extensions_get_config_property_value($property, $domain, NULL);
+    }
+  }
+
+  $config = $config .= '.system.site';
+  $value = \Drupal::config($config)->get($property);
+  return !empty($value) ? $value : NULL;
+}
