@@ -7,3 +7,4 @@ core_version_requirement: ^9.5 || ^10
 dependencies:
   - domain:domain
   - domain:domain_source
+  - domain:domain_config_ui

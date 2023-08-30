@@ -6,4 +6,3 @@ type: module
 core_version_requirement: ^9.5 || ^10
 dependencies:
   - iq_multidomain_extensions:iq_multidomain_extensions
-  - domain:domain_config_ui
