@@ -5,6 +5,9 @@
  * Iq_multidomain_extensions install and update hooks.
  */
 
+use Drupal\domain\Entity\Domain;
+use Drupal\file\Entity\File;
+
 /**
  * Implements hook_install().
  */
@@ -35,5 +38,37 @@ function iq_multidomain_extensions_update_9001() {
     /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
     $module_installer = \Drupal::service('module_installer');
     $module_installer->install(['iq_multidomain_domain_theme_switch']);
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Updates the favicons.
+ */
+function iq_multidomain_extensions_update_9002() {
+  $domains = Domain::loadMultiple();
+  $config_factory = Drupal::configFactory();
+  $config = $config_factory->get('domain_site_settings.domainconfigsettings');
+
+  foreach ($domains as $domain) {
+    if ($favicon = $config->get($domain->id() . '.domain_favicon')) {
+      $favicon_file = File::load(reset($favicon));
+      if ($favicon_file) {
+        /*
+         * A custom favicon for a theme has the following elements (example):
+         * - mimetype: image/vnd.microsoft.icon
+         * - path: public://favicon.ico
+         * - use_default: 0
+         */
+        $new_config = $config_factory->getEditable('domain.config.' . $domain->id() . '.iq_custom.settings');
+        $new_config->set('favicon', [
+          'mimetype' => $favicon_file->get('filemime')->first()->value,
+          'path' => $favicon_file->get('uri')->first()->value,
+          'use_default' => 0,
+        ]);
+        $new_config->save();
+      }
+    }
   }
 }
