@@ -44,7 +44,7 @@ function iq_multidomain_extensions_update_9001() {
 /**
  * Implements hook_update_N().
  *
- * - Enbles domain_config_ui switch form on /admin/appearance/settings.
+ * - Enables domain_config_ui switch form on /admin/appearance/settings.
  * - Updates the favicons.
  * - Uninstalls the iq_multidomain_favicon_extension.
  */
@@ -56,8 +56,10 @@ function iq_multidomain_extensions_update_9002() {
   $config = $config_factory->getEditable('domain_config_ui.settings');
   $path_pages = $config->get('path_pages');
 
-  if (!str_contains($path_pages, '/admin/appearance/settings')) {
+  if (!str_contains($path_pages, '/admin/appearance/settings' . PHP_EOL)) {
     $path_pages .= "\r\n" . '/admin/appearance/settings';
+    $config->set('path_pages', $path_pages);
+    $config->save();
   }
 
   $config->set('path_pages', $path_pages);
