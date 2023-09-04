@@ -5,7 +5,6 @@ namespace Drupal\iq_multidomain_robotstxt_extension\Controller;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
-use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\domain\DomainNegotiatorInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,11 +15,11 @@ use Symfony\Component\HttpFoundation\Response;
 class RobotsTxtController extends ControllerBase implements ContainerInjectionInterface {
 
   /**
-   * RobotsTxt module 'robotstxt.settings' configuration.
+   * The configuration factory.
    *
-   * @var \Drupal\Core\Config\ImmutableConfig
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
-  protected $config;
+  protected $configFactory;
 
   /**
    * The domain negotiator.
@@ -28,13 +27,6 @@ class RobotsTxtController extends ControllerBase implements ContainerInjectionIn
    * @var \Drupal\domain\DomainNegotiatorInterface
    */
   protected $domainNegotiator;
-
-  /**
-   * The language manager.
-   *
-   * @var \Drupal\Core\Language\LanguageManagerInterface
-   */
-  protected $languageManager;
 
   /**
    * The app root.
@@ -46,19 +38,16 @@ class RobotsTxtController extends ControllerBase implements ContainerInjectionIn
   /**
    * Constructs a RobotsTxtController object.
    *
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $config
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   Configuration object factory.
    * @param \Drupal\domain\DomainNegotiatorInterface $domain_negotiator
    *   The domain negotiator.
-   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
-   *   The language manager.
    * @param string $root
    *   The app root.
    */
-  public function __construct(ConfigFactoryInterface $config, DomainNegotiatorInterface $domain_negotiator, LanguageManagerInterface $language_manager, string $root) {
-    $this->config = $config->get('domain_site_settings.domainconfigsettings');
+  public function __construct(ConfigFactoryInterface $config_factory, DomainNegotiatorInterface $domain_negotiator, string $root) {
+    $this->configFactory = $config_factory;
     $this->domainNegotiator = $domain_negotiator;
-    $this->languageManager = $language_manager;
     $this->root = $root;
   }
 
@@ -69,7 +58,6 @@ class RobotsTxtController extends ControllerBase implements ContainerInjectionIn
     return new static(
       $container->get('config.factory'),
       $container->get('domain.negotiator'),
-      $container->get('language_manager'),
       $container->getParameter('app.root')
     );
   }
@@ -81,10 +69,9 @@ class RobotsTxtController extends ControllerBase implements ContainerInjectionIn
    *   The robots.txt file as a response object with 'text/plain' content type.
    */
   public function content() {
-    $domainId = $this->domainNegotiator->getActiveId();
-    $language = $this->languageManager->getCurrentLanguage()->getId();
-
-    $domain_robotstxt_content = _iq_multidomain_extensions_get_config_property_value('robotstxt', $domainId, $language);
+    $domain_id = $this->domainNegotiator->getActiveId();
+    $config = $this->configFactory->get('domain.config.' . $domain_id . '.robotstxt.settings');
+    $domain_robotstxt_content = $config->get('content');
     $content = $domain_robotstxt_content ?? file_get_contents($this->root . '/robots.txt');
 
     return new Response($content, 200, ['Content-Type' => 'text/plain']);
