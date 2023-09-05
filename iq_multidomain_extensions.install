@@ -62,6 +62,12 @@ function iq_multidomain_extensions_update_9002() {
     $config->save();
   }
 
+  if (!str_contains($path_pages, '/admin/appearance/settings/iq_custom' . PHP_EOL)) {
+    $path_pages .= "\r\n" . '/admin/appearance/settings/iq_custom';
+    $config->set('path_pages', $path_pages);
+    $config->save();
+  }
+
   $config->set('path_pages', $path_pages);
   $config->save();
 
