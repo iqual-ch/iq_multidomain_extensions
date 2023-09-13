@@ -42,9 +42,10 @@ function iq_multidomain_domain_theme_switch_preprocess_pattern_views_row(array &
 
   $options = $variables['options'];
   $pattern_prefix = FALSE;
-
-  if (\Drupal::service('theme.manager')->getActiveTheme()->getName() != \Drupal::config('system.theme')->get('default')) {
-    $pattern_prefix = \Drupal::service('theme.manager')->getActiveTheme()->getName() . '_';
+  $domain = \Drupal::service('domain.negotiator')->getActiveDomain();
+  $domain_config = \Drupal::config('domain.config.' . $domain->id() . '.system.theme');
+  if (!empty($domain_config->get('default'))) {
+    $pattern_prefix = $domain_config->get('default') . '_';
     $pattern_ids = array_keys(\Drupal::service('plugin.manager.ui_patterns')->getDefinitions());
   }
 

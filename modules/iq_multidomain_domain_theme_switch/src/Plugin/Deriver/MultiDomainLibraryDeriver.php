@@ -24,7 +24,7 @@ class MultiDomainLibraryDeriver extends LibraryDeriver {
       /** @var \Drupal\domain\Entity\Domain $domain */
       foreach ($domain_storage->loadMultipleSorted() as $domain) {
         $domain_config = \Drupal::config('domain.config.' . $domain->id() . '.system.theme');
-        if (!$domain->isDefault() && !empty($domain_config->get('default'))) {
+        if (!empty($domain_config->get('default'))) {
           $prefix_themes[] = $domain_config->get('default');
         }
       }
