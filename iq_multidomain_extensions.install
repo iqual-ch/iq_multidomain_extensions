@@ -61,14 +61,10 @@ function iq_multidomain_extensions_update_9002() {
 
   if (!str_contains($path_pages, '/admin/appearance/settings' . PHP_EOL)) {
     $path_pages .= "\r\n" . '/admin/appearance/settings';
-    $config->set('path_pages', $path_pages);
-    $config->save();
   }
 
   if (!str_contains($path_pages, '/admin/appearance/settings/iq_custom' . PHP_EOL)) {
     $path_pages .= "\r\n" . '/admin/appearance/settings/iq_custom';
-    $config->set('path_pages', $path_pages);
-    $config->save();
   }
 
   $config->set('path_pages', $path_pages);
@@ -99,6 +95,5 @@ function iq_multidomain_extensions_update_9002() {
   }
 
   // Uninstall the iq_multidomain_favicon_extension sub-module.
-  $module_installer = \Drupal::service('module_installer');
   $module_installer->uninstall(['iq_multidomain_favicon_extension']);
 }
