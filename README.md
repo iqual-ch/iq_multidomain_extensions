@@ -12,6 +12,13 @@ Installation guide
 IMPORTANT NOTES
 - Make sure that the pattern ids and template names have to be identical (Pay attention to - and _)
 
+## Upgrade from 2.x
+With Drupal 10, domain_site_settings and domain_theme_switch are deprecated and are replaced by domain_config. This causes breaking changes.
+- Upgrade to 2.9.y and run update hooks. This will convert favicons and robotstxt settings to use domain_config.
+- Recreate theme selection per domain at /admin/appearance if iq_multidomain_domain_theme_switch was used before.
+- Deinstall domain_site_settings and domain_theme_switch
+- Upgrade to 3.x
+
 ### Theme per domain
 Install the iq_multidomain_domain_theme_switch submodule:
 
@@ -32,7 +39,7 @@ Install the iq_multidomain_sitemap_extension submodule:
 Go to /admin/config/search/xmlsitemap to add sitemaps. On each sitemap, there's a new field available to set the domain.
 
 ### Favicon
-The "iq_multidomain_favicon_extension" has being removed.
+The "iq_multidomain_favicon_extension" has been removed.
 
 ### Robots.txt
 If you want to register a `robots.txt` file per domain, you must activate iq_multidomain_robotstxt_extension. Install it with
