@@ -69,16 +69,18 @@ function iq_multidomain_extensions_update_9002() {
   // Update the favicons.
   $config = $config_factory->get('domain_site_settings.domainconfigsettings');
   foreach ($domains as $domain) {
-    if ($favicon = $config->get($domain->id() . '.domain_favicon')) {
-      $favicon_file = File::load(reset($favicon));
-      if ($favicon_file) {
-        $new_config = $config_factory->getEditable('domain.config.' . $domain->id() . '.iq_custom.settings');
-        $new_config->set('favicon', [
-          'mimetype' => $favicon_file->get('filemime')->first()->value,
-          'path' => $favicon_file->get('uri')->first()->value,
-          'use_default' => 0,
-        ]);
-        $new_config->save();
+    if (!empty($config->get($domain->id()))) {
+      if ($favicon = $config->get($domain->id() . '.domain_favicon')) {
+        $favicon_file = File::load(reset($favicon));
+        if ($favicon_file) {
+          $new_config = $config_factory->getEditable('domain.config.' . $domain->id() . '.iq_custom.settings');
+          $new_config->set('favicon', [
+            'mimetype' => $favicon_file->get('filemime')->first()->value,
+            'path' => $favicon_file->get('uri')->first()->value,
+            'use_default' => 0,
+          ]);
+          $new_config->save();
+        }
       }
     }
   }
