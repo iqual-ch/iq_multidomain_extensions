@@ -8,7 +8,7 @@
 /**
  * Enable multidomain on theme selection.
  */
-function iq_multidomain_domain_theme_switch_extension_install() {
+function iq_multidomain_domain_theme_switch_install() {
   // Enable domain_config_ui forms on /admin/appearance.
   $config = Drupal::configFactory()->getEditable('domain_config_ui.settings');
   $path_pages = $config->get('path_pages');
@@ -23,7 +23,7 @@ function iq_multidomain_domain_theme_switch_extension_install() {
 /**
  * Enable multidomain on theme selection.
  */
-function iq_multidomain_domain_theme_switch_extension_update_9001() {
+function iq_multidomain_domain_theme_switch_update_9001() {
   // Enable domain_config_ui forms on /admin/appearance.
   $config = Drupal::configFactory()->getEditable('domain_config_ui.settings');
   $path_pages = $config->get('path_pages');
