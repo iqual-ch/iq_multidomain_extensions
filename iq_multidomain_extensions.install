@@ -59,11 +59,11 @@ function iq_multidomain_extensions_update_9002() {
   $config = $config_factory->getEditable('domain_config_ui.settings');
   $path_pages = $config->get('path_pages');
 
-  if (!str_contains($path_pages, '/admin/appearance/settings' . PHP_EOL)) {
+  if (!str_contains($path_pages, '/admin/appearance/settings')) {
     $path_pages .= "\r\n" . '/admin/appearance/settings';
   }
 
-  if (!str_contains($path_pages, '/admin/appearance/settings/iq_custom' . PHP_EOL)) {
+  if (!str_contains($path_pages, '/admin/appearance/settings/iq_custom')) {
     $path_pages .= "\r\n" . '/admin/appearance/settings/iq_custom';
   }
 
