@@ -19,3 +19,18 @@ function iq_multidomain_domain_theme_switch_extension_install() {
     $config->save();
   }
 }
+
+/**
+ * Enable multidomain on theme selection.
+ */
+function iq_multidomain_domain_theme_switch_extension_update_9001() {
+  // Enable domain_config_ui forms on /admin/appearance.
+  $config = Drupal::configFactory()->getEditable('domain_config_ui.settings');
+  $path_pages = $config->get('path_pages');
+
+  if (!str_contains($path_pages, '/admin/appearance')) {
+    $path_pages .= "\r\n" . '/admin/appearance';
+    $config->set('path_pages', $path_pages);
+    $config->save();
+  }
+}
