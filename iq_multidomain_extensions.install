@@ -121,8 +121,4 @@ function iq_multidomain_extensions_update_9004() {
       $new_config->save();
     }
   }
-
-  /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
-  $module_installer = \Drupal::service('module_installer');
-  $module_installer->uninstall(['domain_site_settings']);
 }
