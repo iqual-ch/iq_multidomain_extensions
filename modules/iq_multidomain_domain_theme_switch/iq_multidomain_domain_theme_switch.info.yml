@@ -3,7 +3,7 @@ description: Extension to process multiple themes with ui_patterns
 package: Domain
 
 type: module
-core_version_requirement: ^9
+core_version_requirement: ^9.5 || 10
 dependencies:
   - iq_multidomain_extensions:iq_multidomain_extensions
 
