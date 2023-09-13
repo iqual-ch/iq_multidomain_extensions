@@ -88,3 +88,41 @@ function iq_multidomain_extensions_update_9002() {
   // Uninstall the iq_multidomain_favicon_extension sub-module.
   $module_installer->uninstall(['iq_multidomain_favicon_extension']);
 }
+
+/**
+ * Move site settings to domain config.
+ */
+function iq_multidomain_extensions_update_9004() {
+  $domains = Domain::loadMultiple();
+  $config_factory = Drupal::configFactory();
+
+  // Enable domain_config_ui forms on //admin/config/system/site-information.
+  $config = $config_factory->getEditable('domain_config_ui.settings');
+  $path_pages = $config->get('path_pages');
+
+  if (!str_contains($path_pages, '/admin/config/system/site-information')) {
+    $path_pages .= "\r\n" . '/admin/config/system/site-information';
+    $config->set('path_pages', $path_pages);
+    $config->save();
+  }
+
+  // Update the site settings.
+  $config = $config_factory->get('domain_site_settings.domainconfigsettings');
+
+  foreach ($domains as $domain) {
+    $new_config = $config_factory->getEditable('domain.config.' . $domain->id() . '.system.site');
+    if (!empty($config->get($domain->id()))) {
+      $new_config->set('name', $config->get($domain->id() . '.site_name'));
+      $new_config->set('slogan', $config->get($domain->id() . '.site_slogan'));
+      $new_config->set('mail', $config->get($domain->id() . '.site_mail'));
+      $new_config->set('page.front', $config->get($domain->id() . '.site_frontpage'));
+      $new_config->set('page.403', $config->get($domain->id() . '.site_403'));
+      $new_config->set('page.404', $config->get($domain->id() . '.site_404'));
+      $new_config->save();
+    }
+  }
+
+  /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
+  $module_installer = \Drupal::service('module_installer');
+  $module_installer->uninstall(['domain_site_settings']);
+}
