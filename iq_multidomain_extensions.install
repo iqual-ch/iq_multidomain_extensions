@@ -42,11 +42,7 @@ function iq_multidomain_extensions_update_9001() {
 }
 
 /**
- * Implements hook_update_N().
- *
- * - Enables domain_config_ui switch form on /admin/appearance/settings.
- * - Updates the favicons.
- * - Uninstalls the iq_multidomain_favicon_extension.
+ * Enable domain_config_ui, transfer favicon, uninstall favicon sub module.
  */
 function iq_multidomain_extensions_update_9002() {
   /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
@@ -72,17 +68,10 @@ function iq_multidomain_extensions_update_9002() {
 
   // Update the favicons.
   $config = $config_factory->get('domain_site_settings.domainconfigsettings');
-
   foreach ($domains as $domain) {
     if ($favicon = $config->get($domain->id() . '.domain_favicon')) {
       $favicon_file = File::load(reset($favicon));
       if ($favicon_file) {
-        /*
-         * A custom favicon for a theme has the following elements (example):
-         * - mimetype: image/vnd.microsoft.icon
-         * - path: public://favicon.ico
-         * - use_default: 0
-         */
         $new_config = $config_factory->getEditable('domain.config.' . $domain->id() . '.iq_custom.settings');
         $new_config->set('favicon', [
           'mimetype' => $favicon_file->get('filemime')->first()->value,
