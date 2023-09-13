@@ -63,3 +63,28 @@ function iq_multidomain_extensions_tokens($type, $tokens, array $data, array $op
   }
   return $replacements;
 }
+
+/**
+ * Get the selected domain and langcode.
+ *
+ * Return the domain and langcode, selected in the SwitchForm,
+ * titled 'Domain Configuration' on /admin/config/system/site-information/
+ * provided by the drupal/domain_config_ui sub-module.
+ *
+ * @return [string|null, string|null]
+ *   Return the selected domain id and langcode.
+ */
+function _iq_multidomain_extensions_get_domain_and_language() {
+  $remember_domain = \Drupal::config('domain_config_ui.settings')->get('remember_domain');
+
+  if ($remember_domain) {
+    $domain = $_SESSION['domain_config_ui_domain'];
+    $langcode = $_SESSION['domain_config_ui_language'];
+  }
+  else {
+    $request = \Drupal::request();
+    $domain = $request->query->get('domain_config_ui_domain') ?? NULL;
+    $langcode = $request->query->get('domain_config_ui_language') ?? NULL;
+  }
+  return [$domain, $langcode];
+}
