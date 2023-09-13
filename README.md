@@ -32,7 +32,7 @@ Install the iq_multidomain_sitemap_extension submodule:
 Go to /admin/config/search/xmlsitemap to add sitemaps. On each sitemap, there's a new field available to set the domain.
 
 ### Favicon
-The "iq_multidomain_favicon_extension" has being removed.
+The "iq_multidomain_favicon_extension" is being removed by this release.
 
 ### Robots.txt
 If you want to register a `robots.txt` file per domain, you must activate iq_multidomain_robotstxt_extension. Install it with
