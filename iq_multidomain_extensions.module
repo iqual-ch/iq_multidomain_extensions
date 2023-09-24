@@ -5,10 +5,9 @@
  * Iq_multidomain_extensions module file.
  */
 
-use Drupal\iq_multidomain_extensions\DomainForm;
-use Drupal\domain\Form\DomainDeleteForm;
-use Drupal\iq_multidomain_extensions\Plugin\views\row\Pattern;
 use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\domain\Form\DomainDeleteForm;
+use Drupal\iq_multidomain_extensions\DomainForm;
 
 /**
  * Implements hook_entity_type_alter().
@@ -66,66 +65,26 @@ function iq_multidomain_extensions_tokens($type, $tokens, array $data, array $op
 }
 
 /**
- * Implements hook_preprocess_pattern_views_row().
+ * Get the selected domain and langcode.
+ *
+ * Return the domain and langcode, selected in the SwitchForm,
+ * titled 'Domain Configuration' on /admin/config/system/site-information/
+ * provided by the drupal/domain_config_ui sub-module.
+ *
+ * @return [string|null, string|null]
+ *   Return the selected domain id and langcode.
  */
-function iq_multidomain_extensions_preprocess_pattern_views_row(array &$variables) {
-  /** @var \Drupal\views\ResultRow $row */
-  /** @var \Drupal\views\ViewExecutable $view */
-  /** @var \Drupal\ui_patterns_views\Plugin\views\row\Pattern $row_plugin */
+function _iq_multidomain_extensions_get_domain_and_language() {
+  $remember_domain = \Drupal::config('domain_config_ui.settings')->get('remember_domain');
 
-  $fields = [];
-  $view = $variables['view'];
-  $row_plugin = $view->rowPlugin;
-  $options = $variables['options'];
-  $row = $variables['row'];
-
-  $pattern_prefix = FALSE;
-
-  if (\Drupal::service('theme.manager')->getActiveTheme()->getName() != \Drupal::config('system.theme')->get('default')) {
-    $pattern_prefix = \Drupal::service('theme.manager')->getActiveTheme()->getName() . '_';
-    $pattern_ids = array_keys(\Drupal::service('plugin.manager.ui_patterns')->getDefinitions());
+  if ($remember_domain) {
+    $domain = $_SESSION['domain_config_ui_domain'];
+    $langcode = $_SESSION['domain_config_ui_language'];
   }
-
-  foreach ($options['pattern_mapping'] as $mapping) {
-    $field_name = $mapping['source'];
-    $field = $view->field[$field_name];
-    $field_output = $view->style_plugin->getField($row->index, $field_name);
-    if ($row_plugin->isFieldVisible($field, $field_output)) {
-      $destination = $row_plugin->getMappingDestination('views_row', $field_name, $options);
-      $fields[$destination][] = $field_output;
-    }
+  else {
+    $request = \Drupal::request();
+    $domain = $request->query->get('domain_config_ui_domain') ?? NULL;
+    $langcode = $request->query->get('domain_config_ui_language') ?? NULL;
   }
-
-  $variables['pattern'] = [];
-  if (empty($view->live_preview) && !empty($fields)) {
-    if ($pattern_prefix && in_array($pattern_prefix . $options['pattern'], $pattern_ids)) {
-      $pattern_id = $pattern_prefix . $options['pattern'];
-    }
-    else {
-      $pattern_id = $options['pattern'];
-    }
-
-    $variables['pattern'] = [
-      '#type' => 'pattern',
-      '#id' => $pattern_id,
-      '#fields' => $fields,
-      '#multiple_sources' => TRUE,
-      '#variant' => $options['pattern_variant'] ?? '',
-    ];
-
-    // Allow default context values to not override those exposed elsewhere.
-    $variables['pattern']['#context']['type'] = 'views_row';
-    $variables['pattern']['#context']['view_name'] = $view->storage->id();
-    $variables['pattern']['#context']['display'] = $view->current_display;
-    $variables['pattern']['#context']['view'] = $view;
-    $variables['pattern']['#context']['row'] = $row;
-  }
-}
-
-/**
- * Implements hook_views_plugins_row_alter().
- */
-function iq_multidomain_extensions_views_plugins_row_alter(array &$plugins) {
-  // Change the used class of a plugin.
-  $plugins['ui_patterns']['class'] = Pattern::class;
+  return [$domain, $langcode];
 }

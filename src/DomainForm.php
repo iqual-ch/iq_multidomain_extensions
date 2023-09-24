@@ -3,11 +3,11 @@
 namespace Drupal\iq_multidomain_extensions;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\domain\Form\DomainForm as OrigForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\domain\DomainStorageInterface;
 use Drupal\domain\DomainValidatorInterface;
+use Drupal\domain\Form\DomainForm as OrigForm;
 
 /**
  * Base form for domain edit forms.
@@ -99,7 +99,7 @@ class DomainForm extends OrigForm {
       ];
 
       $form['hostname']['#field_suffix'] = '.' . getenv('DOMAIN_BASE');
-      $form['hostname']['#default_value'] = str_replace('.' . getenv('DOMAIN_BASE'), '', $form['hostname']['#default_value']);
+      $form['hostname']['#default_value'] = str_replace('.' . getenv('DOMAIN_BASE'), '', (string) $form['hostname']['#default_value']);
       $form['hostname']['#default_value'] = '';
       $form['name']['#default_value'] = '';
     }
@@ -143,7 +143,7 @@ class DomainForm extends OrigForm {
       $label = $form_state->getValue('name');
       $id = $form_state->getValue('id');
       if ($form_state->getValue('create_menu')) {
-        $this->domainService->addMenu($label, 'multidomain-' . str_replace('_', '-', $id), $form_state->getValue('menu_content_types'));
+        $this->domainService->addMenu($label, 'multidomain-' . str_replace('_', '-', (string) $id), $form_state->getValue('menu_content_types'));
       }
 
       if ($form_state->getValue('create_styling_profile')) {
