@@ -7,9 +7,15 @@
   "require": {
     "php": "^8.1",
     "drupal/core": "^9.5 || ^10",
-    "drupal/domain": "^2.0",
+    "drupal/domain": "2.0.0-beta1",
     "drupal/robotstxt": "^1.5",
     "drupal/xmlsitemap": "^1.1"
   },
-  "extra": {}
+  "extra": {
+    "patches": {
+      "drupal/domain": {
+        "#3367785: Available on Current Domain doesn't instantiate": "https://www.drupal.org/files/issues/2023-06-21/3367785-domain-php8-boolean.patch"
+      }
+    }
+  }
 }
