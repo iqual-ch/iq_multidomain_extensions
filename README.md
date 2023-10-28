@@ -14,9 +14,9 @@ IMPORTANT NOTES
 
 ## Upgrade from 2.x
 With Drupal 10, domain_site_settings and domain_theme_switch are deprecated and are replaced by domain_config. This causes breaking changes.
-- Upgrade to 2.9.y and run update hooks. This will convert favicons and robotstxt settings to use domain_config.
+- Upgrade to 2.5.y and run update hooks. This will convert favicons and robotstxt settings to use domain_config.
 - Recreate theme selection per domain at /admin/appearance if iq_multidomain_domain_theme_switch was used before.
-- Deinstall domain_site_settings and domain_theme_switch
+- Remove domain_site_settings and domain_theme_switch from the project
 - Upgrade to 3.x
 
 ### Theme per domain
