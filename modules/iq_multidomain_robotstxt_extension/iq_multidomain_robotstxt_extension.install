@@ -58,3 +58,12 @@ function iq_multidomain_robotstxt_extension_update_9001() {
     }
   }
 }
+
+/**
+ * Install drupal/robotstxt.
+ */
+function iq_multidomain_robotstxt_extension_update_10000() {
+  /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
+  $module_installer = \Drupal::service('module_installer');
+  $module_installer->install(['robotstxt']);
+}
