@@ -77,21 +77,48 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
   }
 
   if ($link['type'] == 'frontpage') {
-    $domainConfig = \Drupal::config('domain_site_settings.domainconfigsettings')->get($domain->id());
-    $params = Url::fromUri("internal:" . $domainConfig['site_frontpage'])->getRouteParameters();
+    $domainConfig = \Drupal::config('domain.config.' . $domain->id() . '.system.site');
+    $params = Url::fromUri("internal:" . $domainConfig['page.front'])->getRouteParameters();
     $element['loc'] = $domain->get('scheme') . '://' . $domain->get('hostname');
   }
   else {
     $params = Url::fromUri("internal:" . $link['loc'])->getRouteParameters();
   }
 
-  $entity_type = key($params);
-  $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->load($params[$entity_type]);
+  if (!_iq_multidomain_sitemap_extension_target_matches($params, $sitemap)) {
+    $element = [];
+    return;
+  }
 
   // Replace base URL with domain's host.
   $baseUrl = $sitemap->get('uri')['options']['base_url'];
   $domainHost = $domain->get('scheme') . '://' . $domain->get('hostname');
   $element['loc'] = str_replace($baseUrl, $domainHost, (string) $element['loc']);
+}
+
+/**
+ * Check if target entity matches sitemap domain.
+ *
+ * @param array $params
+ *   The route parameters.
+ * @param XmlSitemapInterface $sitemap
+ *   The sitemap.
+ * 
+ * @return boolean
+ *   True if target matches sitemap domain, false otherwise.
+ */
+function _iq_multidomain_sitemap_extension_target_matches($params, $sitemap) {
+  // Get entity type from params.
+  $entity_type = key($params);
+  if (!$entity_type) {
+    return TRUE;
+  }
+
+  // Get entity from params.
+  $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->load($params[$entity_type]);
+  if (!$entity) {
+    return TRUE;
+  }
 
   // Make sure we are in the correct context in case of translated domains.
   $langcode_context = $sitemap->context['language'];
@@ -101,6 +128,7 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
 
   // Remove element if link's domain doesn't match the XML's domain.
   if (domain_source_get($entity) && domain_source_get($entity) !== $sitemap->context['domain_record']) {
-    $element = [];
+    return FALSE;
   }
+  return TRUE;
 }
