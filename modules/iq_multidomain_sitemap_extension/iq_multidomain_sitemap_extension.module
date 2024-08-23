@@ -140,7 +140,7 @@ function iq_multidomain_sitemap_extension_xmlsitemap_link_alter(array &$link, ar
   $node = $context['node'];
   if (
     $link['loc'] &&
-    $entity->isPublished()
+    $node->isPublished()
   ) {
     $link['access'] = TRUE;
   }
