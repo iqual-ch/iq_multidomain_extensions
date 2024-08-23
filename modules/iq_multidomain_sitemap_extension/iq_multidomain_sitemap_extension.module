@@ -132,3 +132,17 @@ function _iq_multidomain_sitemap_extension_target_matches($params, $sitemap) {
   }
   return TRUE;
 }
+
+/**
+ * Implements hook_xmlsitemap_link_alter().
+ */
+function iq_multidomain_sitemap_extension_xmlsitemap_link_alter(array &$link, array $context) {
+  $entity = $context['entity'];
+  if (
+    $link['loc'] &&
+    $entity instanceof NodeInterface &&
+    $entity->isPublished()
+  ) {
+    $link['access'] = TRUE;
+  }
+}
