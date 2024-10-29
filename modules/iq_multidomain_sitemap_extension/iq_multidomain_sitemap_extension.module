@@ -94,6 +94,14 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
   $baseUrl = $sitemap->get('uri')['options']['base_url'];
   $domainHost = $domain->get('scheme') . '://' . $domain->get('hostname');
   $element['loc'] = str_replace($baseUrl, $domainHost, (string) $element['loc']);
+
+  // Handles sitemap prefix for mixed language negotiation (prefix/domain).
+  $domainConfigLanguageNegotiation = \Drupal::config('domain.config.' . $domain->id() . '.language.negotiation');
+  if ($domainConfigLanguageNegotiation->get('url.source') !== 'domain') {
+    // If the language negotioation is not a domain (or it doesn't exist),
+    // we forcefully add the language prefix.
+    $element['loc'] = str_replace($domainHost, $domainHost . '/' . $link['language']->getId(), (string) $element['loc']);
+  }
 }
 
 /**
