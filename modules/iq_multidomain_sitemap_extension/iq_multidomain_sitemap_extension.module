@@ -77,6 +77,7 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
   }
 
   if ($link['type'] == 'frontpage') {
+    $domainConfig = \Drupal::config('domain.config.' . $domain->id() . '.system.site');
     $url = Url::fromUri('internal:' . $domainConfig->get('page.front'));
     if (!$url->isRouted()) {
       $element = [];
