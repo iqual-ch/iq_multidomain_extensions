@@ -1,0 +1,12 @@
+diff --git a/src/XmlSitemapGenerator.php b/src/XmlSitemapGenerator.php
+index cec4e5b..d6e943f 100644
+--- a/src/XmlSitemapGenerator.php
++++ b/src/XmlSitemapGenerator.php
+@@ -292,7 +292,6 @@ class XmlSitemapGenerator implements XmlSitemapGeneratorInterface {
+     $query->fields('x', [
+       'loc', 'type', 'subtype', 'id', 'lastmod', 'changefreq', 'changecount', 'priority', 'language', 'access', 'status',
+     ]);
+-    $query->condition('x.access', 1);
+     $query->condition('x.status', 1);
+     $query->orderBy('x.language', 'DESC');
+     $query->orderBy('x.loc');
