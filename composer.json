@@ -18,7 +18,7 @@
         "[https://dgo.to/3450485]: WSOD Undefined method DomainListBuilder::formBuilder": "https://www.drupal.org/files/issues/2024-05-29/3450485-domain-form-builder.patch"
       },
       "drupal/xmlsitemap": {
-        "Allow link access check per domain": "public/modules/custom/iq_multidomain_extensions/patches/xmlsitemap-allow-link-access-check-per-domain.patch"
+        "[https://dgo.to/3526019]: Allow link access check per domain": "https://git.drupalcode.org/project/xmlsitemap/-/merge_requests/60.diff"
       }
     }
   }
