@@ -155,13 +155,16 @@ function iq_multidomain_sitemap_extension_has_access(array $link, $domainId) {
     return TRUE;
   }
 
-  $params = Url::fromUri("internal:" . $link['loc'])->getRouteParameters();
-  $entity_type = key($params);
+  $entity_type = $link['type'];
   if (!$entity_type) {
     return FALSE;
   }
+  $entity_id = $link['id'];
+  if (!$entity_id) {
+    return FALSE;
+  }
 
-  $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->load($params[$entity_type]);
+  $entity = \Drupal::entityTypeManager()->getStorage($entity_type)->load($entity_id);
   if (!$entity) {
     return FALSE;
   }
