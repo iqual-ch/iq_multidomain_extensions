@@ -1,8 +1,8 @@
 administer iq_multidomain_extensions settings:
   title: 'Administer iqual multidomain extension settings'
   description: 'Administer iqual multidomain extension settings.'
-  retrict access: true
+  restrict access: true
 administer iq_multidomain_extensions domains:
   title: 'Administer iqual multidomain extension domains'
   description: 'Show all settings when editing a domain.'
-  retrict access: true
+  restrict access: true
