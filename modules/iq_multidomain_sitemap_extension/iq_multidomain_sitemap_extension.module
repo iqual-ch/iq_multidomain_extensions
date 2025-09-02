@@ -71,10 +71,10 @@ function iq_multidomain_sitemap_extension_xmlsitemap_element_alter(array &$eleme
   }
 
   // Exclude sitemap links that are not in the domain.
-  if (!iq_multidomain_sitemap_extension_has_access($link, $domain->id())) {
+ /*  if (!iq_multidomain_sitemap_extension_has_access($link, $domain->id())) {
     $element = [];
     return;
-  }
+  } */
 
   // Remove /node/id URLs from sitemap.
   if (str_contains((string) $element['loc'], '/node/')) {

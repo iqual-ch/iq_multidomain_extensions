@@ -10,12 +10,5 @@
     "drupal/domain": "^2.0@beta",
     "drupal/robotstxt": "^1.5",
     "drupal/xmlsitemap": "^1.1"
-  },
-  "extra": {
-    "patches": {
-      "drupal/xmlsitemap": {
-        "[https://dgo.to/3526019]: Allow link access check per domain": "https://git.drupalcode.org/project/xmlsitemap/-/merge_requests/60.diff"
-      }
-    }
   }
 }
