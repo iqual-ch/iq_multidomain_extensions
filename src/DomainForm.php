@@ -32,9 +32,17 @@ class DomainForm extends OrigForm {
    *   The domain validator.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The messenger service.
    */
-  public function __construct(DomainStorageInterface $domain_storage, RendererInterface $renderer, DomainValidatorInterface $validator, EntityTypeManagerInterface $entity_type_manager) {
-    parent::__construct($domain_storage, $renderer, $validator, $entity_type_manager);
+  public function __construct(
+    DomainStorageInterface $domain_storage,
+    RendererInterface $renderer,
+    DomainValidatorInterface $validator,
+    EntityTypeManagerInterface $entity_type_manager,
+    MessengerInterface $messenger,
+  ) {
+    parent::__construct($domain_storage, $renderer, $validator, $entity_type_manager, $messenger);
     $this->domainService = \Drupal::service('iq_multidomain_extensions.service.domain');
 
   }
