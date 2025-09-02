@@ -4,6 +4,7 @@ namespace Drupal\iq_multidomain_extensions;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\domain\DomainStorageInterface;
 use Drupal\domain\DomainValidatorInterface;
@@ -32,9 +33,17 @@ class DomainForm extends OrigForm {
    *   The domain validator.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The messenger service.
    */
-  public function __construct(DomainStorageInterface $domain_storage, RendererInterface $renderer, DomainValidatorInterface $validator, EntityTypeManagerInterface $entity_type_manager) {
-    parent::__construct($domain_storage, $renderer, $validator, $entity_type_manager);
+  public function __construct(
+    DomainStorageInterface $domain_storage,
+    RendererInterface $renderer,
+    DomainValidatorInterface $validator,
+    EntityTypeManagerInterface $entity_type_manager,
+    MessengerInterface $messenger,
+  ) {
+    parent::__construct($domain_storage, $renderer, $validator, $entity_type_manager, $messenger);
     $this->domainService = \Drupal::service('iq_multidomain_extensions.service.domain');
 
   }
