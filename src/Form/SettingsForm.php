@@ -2,13 +2,51 @@
 
 namespace Drupal\iq_multidomain_extensions\Form;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * The settings form for iq_multidomain_extensions.
  */
 class SettingsForm extends ConfigFormBase {
+
+  /**
+   * Constructs a \Drupal\system\ConfigFormBase object.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The factory for configuration objects.
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface $typedConfigManager
+   *   The typed config manager.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
+   *   The module handler service.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The entity type manager service.
+   */
+  public function __construct(
+    ConfigFactoryInterface $config_factory,
+    protected TypedConfigManagerInterface $typedConfigManager,
+    protected ModuleHandlerInterface $moduleHandler,
+    protected EntityTypeManagerInterface $entityTypeManager,
+  ) {
+    parent::__construct($config_factory, $typedConfigManager);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('config.typed'),
+      $container->get('module_handler'),
+      $container->get('entity_type.manager'),
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -29,7 +67,7 @@ class SettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('iq_multidomain_extensions.settings');
-    $stylingProfileThemeSwitch = \Drupal::service('module_handler')->moduleExists('styling_profiles_domain_switch');
+    $stylingProfileThemeSwitch = $this->moduleHandler->moduleExists('styling_profiles_domain_switch');
 
     $form['menu'] = [
       '#type' => 'details',
@@ -45,7 +83,7 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => !empty($config->get('create_menu')) ? $config->get('create_menu') : 0,
     ];
 
-    $contentTypes = \Drupal::service('entity_type.manager')->getStorage('node_type')->loadMultiple();
+    $contentTypes = $this->entityTypeManager->getStorage('node_type')->loadMultiple();
     $contentTypesList = [];
     foreach ($contentTypes as $contentType) {
       $contentTypesList[$contentType->id()] = $contentType->label();

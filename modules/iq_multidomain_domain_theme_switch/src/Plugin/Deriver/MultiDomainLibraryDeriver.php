@@ -30,7 +30,8 @@ class MultiDomainLibraryDeriver extends LibraryDeriver {
       }
     }
 
-    // Loop over all patterns and prefix patterns provided by secondary domain themes.
+    // Loop over all patterns and
+    // prefix patterns provided by secondary domain themes.
     /** @var \Drupal\ui_patterns\Definition\PatternDefinition $definition */
     foreach ($patterns as $delta => $definition) {
       $provider = $definition->getProvider();
