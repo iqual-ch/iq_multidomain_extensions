@@ -1,5 +1,5 @@
 name: iqual Multidomain Favicon Extension
-description: Extension to add favicoans per Domain
+description: Extension to add favicons per Domain
 package: Domain
 
 type: module
