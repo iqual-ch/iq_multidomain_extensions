@@ -2,13 +2,9 @@
 
 namespace Drupal\iq_multidomain_extensions;
 
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\Core\Render\RendererInterface;
-use Drupal\domain\DomainStorageInterface;
-use Drupal\domain\DomainValidatorInterface;
 use Drupal\domain\Form\DomainForm as OrigForm;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Base form for domain edit forms.
@@ -23,29 +19,12 @@ class DomainForm extends OrigForm {
   protected $domainService = NULL;
 
   /**
-   * Constructs a DomainForm object.
-   *
-   * @param \Drupal\domain\DomainStorageInterface $domain_storage
-   *   The domain storage manager.
-   * @param \Drupal\Core\Render\RendererInterface $renderer
-   *   The renderer.
-   * @param \Drupal\domain\DomainValidatorInterface $validator
-   *   The domain validator.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
-   *   The entity type manager.
-   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
-   *   The messenger service.
+   * {@inheritdoc}
    */
-  public function __construct(
-    DomainStorageInterface $domain_storage,
-    RendererInterface $renderer,
-    DomainValidatorInterface $validator,
-    EntityTypeManagerInterface $entity_type_manager,
-    MessengerInterface $messenger,
-  ) {
-    parent::__construct($domain_storage, $renderer, $validator, $entity_type_manager, $messenger);
-    $this->domainService = \Drupal::service('iq_multidomain_extensions.service.domain');
-
+  public static function create(ContainerInterface $container) {
+    $instance = parent::create($container);
+    $instance->domainService = $container->get('iq_multidomain_extensions.service.domain');
+    return $instance;
   }
 
   /**

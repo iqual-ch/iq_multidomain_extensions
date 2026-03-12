@@ -6,20 +6,16 @@
  */
 
 use Drupal\domain\Entity\Domain;
+use Drupal\domain_config\Config\DomainConfigCollectionUtils;
 
 /**
  * Enable multidomain on drupal/robotstxt.
+ *
+ * @deprecated No longer needed in Domain 3.x. The path_pages setting was removed.
  */
 function iq_multidomain_robotstxt_extension_install() {
-  // Enable domain_config_ui forms on /admin/config/search/robotstxt.
-  $config = Drupal::configFactory()->getEditable('domain_config_ui.settings');
-  $path_pages = $config->get('path_pages');
-
-  if (!str_contains($path_pages, '/admin/config/search/robotstxt')) {
-    $path_pages .= "\r\n" . '/admin/config/search/robotstxt';
-    $config->set('path_pages', $path_pages);
-    $config->save();
-  }
+  // Domain 3.x no longer uses path_pages. Configuration overrides are managed
+  // per config name via domain_config_ui.manager service.
 }
 
 /**
@@ -27,36 +23,11 @@ function iq_multidomain_robotstxt_extension_install() {
  *
  * - Enables domain_config_ui switch form on /admin/config/search/robotstxt.
  * - Updates the robots.txt files.
+ *
+ * @deprecated Legacy update hook for Domain 2.x.
  */
 function iq_multidomain_robotstxt_extension_update_9001() {
-  /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
-  $module_installer = \Drupal::service('module_installer');
-  $module_installer->install(['domain_config', 'domain_config_ui']);
-  $config_factory = Drupal::configFactory();
-
-  // Enable domain_config_ui forms on /admin/config/search/robotstxt.
-  $config = $config_factory->getEditable('domain_config_ui.settings');
-  $path_pages = $config->get('path_pages');
-
-  if (!str_contains($path_pages, '/admin/config/search/robotstxt')) {
-    $path_pages .= "\r\n" . '/admin/config/search/robotstxt';
-    $config->set('path_pages', $path_pages);
-    $config->save();
-  }
-
-  // Update the robots.txt files per domain.
-  $config = $config_factory->get('domain_site_settings.domainconfigsettings');
-  $domains = Domain::loadMultiple();
-
-  foreach ($domains as $domain) {
-    if (!empty($config->get($domain->id()))) {
-      if ($robotstxt = $config->get($domain->id() . '.domain_robotstxt')) {
-        $domain_config = $config_factory->getEditable('domain.config.' . $domain->id() . '.robotstxt.settings');
-        $domain_config->set('content', $robotstxt);
-        $domain_config->save();
-      }
-    }
-  }
+  // This update was for Domain 2.x and is now superseded by update_10001.
 }
 
 /**
@@ -66,4 +37,54 @@ function iq_multidomain_robotstxt_extension_update_10000() {
   /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
   $module_installer = \Drupal::service('module_installer');
   $module_installer->install(['robotstxt']);
+}
+
+/**
+ * Migrate robotstxt domain config from 2.x to 3.x format.
+ */
+function iq_multidomain_robotstxt_extension_update_10001() {
+  /** @var \Drupal\Core\Config\StorageInterface $config_storage */
+  $config_storage = \Drupal::service('config.storage');
+  $migrated = 0;
+
+  // Migrate legacy domain.config.{domain_id}.robotstxt.settings to collections.
+  $domains = Domain::loadMultiple();
+  foreach ($domains as $domain) {
+    $legacy_name = 'domain.config.' . $domain->id() . '.robotstxt.settings';
+    $legacy_config = $config_storage->read($legacy_name);
+
+    if (!empty($legacy_config)) {
+      // Write to new collection format.
+      $domain_collection = $config_storage->createCollection(
+        DomainConfigCollectionUtils::createDomainConfigCollectionName($domain->id())
+      );
+      $domain_collection->write('robotstxt.settings', $legacy_config);
+
+      // Register the configuration with domain_config_ui.
+      /** @var \Drupal\domain_config_ui\DomainConfigUIManagerInterface $domain_config_ui_manager */
+      $domain_config_ui_manager = \Drupal::service('domain_config_ui.manager');
+      $domain_config_ui_manager->addConfigurationsToDomain($domain->id(), ['robotstxt.settings']);
+
+      // Delete legacy config.
+      $config_storage->delete($legacy_name);
+      $migrated++;
+    }
+  }
+
+  return t('Migrated @count robotstxt domain configurations to Domain 3.x format.', [
+    '@count' => $migrated,
+  ]);
+}
+
+/**
+ * Clean up deprecated path_pages setting for robotstxt.
+ */
+function iq_multidomain_robotstxt_extension_update_10002() {
+  $config = \Drupal::configFactory()->getEditable('domain_config_ui.settings');
+  if ($config->get('path_pages') !== NULL) {
+    $config->clear('path_pages');
+    $config->save();
+    return t('Removed deprecated path_pages setting.');
+  }
+  return t('No deprecated settings found.');
 }

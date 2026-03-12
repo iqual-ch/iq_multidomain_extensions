@@ -7,30 +7,57 @@
 
 /**
  * Enable multidomain on theme selection.
+ *
+ * @deprecated No longer needed in Domain 3.x. The path_pages setting was removed.
  */
-function iq_multidomain_domain_theme_switch_extension_install() {
-  // Enable domain_config_ui forms on /admin/appearance.
-  $config = Drupal::configFactory()->getEditable('domain_config_ui.settings');
-  $path_pages = $config->get('path_pages');
-
-  if (!str_contains($path_pages, '/admin/appearance')) {
-    $path_pages .= "\r\n" . '/admin/appearance';
-    $config->set('path_pages', $path_pages);
-    $config->save();
-  }
+function iq_multidomain_domain_theme_switch_install() {
+  // Domain 3.x no longer uses path_pages. Configuration overrides are managed
+  // per config name via domain_config_ui.manager service.
 }
 
 /**
  * Enable multidomain on theme selection.
+ *
+ * @deprecated Legacy update hook for Domain 2.x.
  */
-function iq_multidomain_domain_theme_switch_extension_update_9001() {
-  // Enable domain_config_ui forms on /admin/appearance.
-  $config = Drupal::configFactory()->getEditable('domain_config_ui.settings');
-  $path_pages = $config->get('path_pages');
+function iq_multidomain_domain_theme_switch_update_9001() {
+  // This update was for Domain 2.x and is now superseded by update_10001.
+}
 
-  if (!str_contains($path_pages, '/admin/appearance')) {
-    $path_pages .= "\r\n" . '/admin/appearance';
-    $config->set('path_pages', $path_pages);
-    $config->save();
+/**
+ * Migrate domain config from 2.x to 3.x format.
+ */
+function iq_multidomain_domain_theme_switch_update_10001() {
+  // Run the domain_config migration service to migrate legacy configs.
+  if (\Drupal::moduleHandler()->moduleExists('domain_config')) {
+    /** @var \Drupal\domain_config\Service\DomainConfigMigration $migration */
+    $migration = \Drupal::service('domain_config.config_migration');
+    $results = $migration->migrateConfigurations();
+
+    $message = t('Migrated @count domain configuration overrides to Domain 3.x format.', [
+      '@count' => count($results['migrated']),
+    ]);
+
+    if (!empty($results['errors'])) {
+      $message .= ' ' . t('Errors: @errors', ['@errors' => implode(', ', $results['errors'])]);
+    }
+
+    return $message;
   }
+
+  return t('domain_config module not enabled, skipping migration.');
+}
+
+/**
+ * Clean up deprecated path_pages setting.
+ */
+function iq_multidomain_domain_theme_switch_update_10002() {
+  $config = \Drupal::configFactory()->getEditable('domain_config_ui.settings');
+  if ($config->get('path_pages') !== NULL) {
+    $config->clear('path_pages');
+    $config->clear('remember_domain');
+    $config->save();
+    return t('Removed deprecated path_pages and remember_domain settings.');
+  }
+  return t('No deprecated settings found.');
 }

@@ -2,9 +2,10 @@
 
 /**
  * @file
- * Contains iq…multidomain_theme_switch.module.
+ * Contains iq_multidomain_theme_switch.module.
  */
 
+use Drupal\domain_config\Config\DomainConfigCollectionUtils;
 use Drupal\iq_multidomain_domain_theme_switch\Plugin\views\row\Pattern;
 
 /**
@@ -43,11 +44,40 @@ function iq_multidomain_domain_theme_switch_preprocess_pattern_views_row(array &
 
   $options = $variables['options'];
   $pattern_prefix = FALSE;
+  $pattern_ids = array_keys(\Drupal::service('plugin.manager.ui_patterns')->getDefinitions());
+
+  // Get the default site theme - patterns from this theme are NOT prefixed.
+  $default_theme = \Drupal::config('system.theme')->get('default');
+
+  // Try to get the theme from domain config override.
   $domain = \Drupal::service('domain.negotiator')->getActiveDomain();
-  $domain_config = \Drupal::config('domain.config.' . $domain->id() . '.system.theme');
-  if (!empty($domain_config->get('default'))) {
-    $pattern_prefix = $domain_config->get('default') . '_';
-    $pattern_ids = array_keys(\Drupal::service('plugin.manager.ui_patterns')->getDefinitions());
+  $domain_theme = NULL;
+  if ($domain) {
+    // First try Domain 3.x format (collection-based config).
+    /** @var \Drupal\Core\Config\StorageInterface $configStorage */
+    $configStorage = \Drupal::service('config.storage');
+    $domain_collection = $configStorage->createCollection(
+      DomainConfigCollectionUtils::createDomainConfigCollectionName($domain->id())
+    );
+    $theme_config = $domain_collection->read('system.theme');
+    if (!empty($theme_config['default'])) {
+      $domain_theme = $theme_config['default'];
+    }
+
+    // Fall back to legacy Domain 2.x format.
+    if (!$domain_theme) {
+      $legacy_config = \Drupal::config('domain.config.' . $domain->id() . '.system.theme');
+      if (!empty($legacy_config->get('default'))) {
+        $domain_theme = $legacy_config->get('default');
+      }
+    }
+  }
+
+  // Only use prefix if domain theme is different from default theme.
+  // Default theme patterns are not prefixed.
+  $active_theme = $domain_theme ?: $default_theme;
+  if ($active_theme && $active_theme !== $default_theme) {
+    $pattern_prefix = $active_theme . '_';
   }
 
   foreach ($options['pattern_mapping'] as $mapping) {
@@ -62,11 +92,23 @@ function iq_multidomain_domain_theme_switch_preprocess_pattern_views_row(array &
 
   $variables['pattern'] = [];
   if (empty($view->live_preview) && !empty($fields)) {
-    if ($pattern_prefix && in_array($pattern_prefix . $options['pattern'], $pattern_ids)) {
-      $pattern_id = $pattern_prefix . $options['pattern'];
+    // Determine the pattern ID to use.
+    $base_pattern = $options['pattern'];
+    $pattern_id = $base_pattern;
+
+    // Use prefixed version only for secondary themes.
+    if ($pattern_prefix && in_array($pattern_prefix . $base_pattern, $pattern_ids)) {
+      $pattern_id = $pattern_prefix . $base_pattern;
     }
-    else {
-      $pattern_id = $options['pattern'];
+    // For default theme or fallback, use unprefixed pattern.
+    elseif (!in_array($base_pattern, $pattern_ids)) {
+      // Pattern doesn't exist - log warning.
+      \Drupal::logger('iq_multidomain_domain_theme_switch')->warning(
+        'Pattern @pattern not found.',
+        [
+          '@pattern' => $base_pattern,
+        ]
+      );
     }
 
     $variables['pattern'] = [
