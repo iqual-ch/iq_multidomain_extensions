@@ -1,5 +1,5 @@
 iq_multidomain_extensions.general_settings:
-  title: 'iqual multidomain configuration.'
+  title: 'iqual multidomain configuration'
   route_name: iq_multidomain_extensions.general_settings
   description: 'General configuration for iqual multidomain extension.'
   parent: system.admin_config_development
